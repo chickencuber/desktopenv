@@ -145,7 +145,7 @@ function createWindow(shell) {
 
     close.rect.height = close.rect.width;
     close.rect.x = window.rect.width - close.rect.width - 2;
-    close.on(Event.mousePressed, () => shell.exit = true)
+    close.on(Event.mousePressed, () => shell.shell.exit = true)
 
     const change_size = new Button({
         text: "\u{1F5D6}", style: {
