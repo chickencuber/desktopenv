@@ -56,8 +56,6 @@ const name = new Div({
     },
 });
 
-name.rect.width = 150;
-
 name.rect.y = 50;
 name.rect.x = vw(50) - name.rect.width / 2;
 
@@ -289,6 +287,7 @@ Number.prototype.clamp = function (min, max) {
 
 Shell.onExit = () => {
     FS.addFile("/user/desktop/game_best", best.toString()); 
+    canvas.remove();
 }
 
 function draw() {
