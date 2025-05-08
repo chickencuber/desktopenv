@@ -4,7 +4,7 @@ const { Event, Button, Div, Element, root, vw, vh, Img } = await use(
 
 Shell.name = "Tube Rush";
 
-Shell.icon = loadImage(getFile("~/icons/game.png"))
+Shell.icon = loadImage(await getFile("~/icons/game.png"))
 
 const canvas = Shell.gl.createGraphics(vw(100), vh(100), WEBGL);
 
@@ -29,7 +29,7 @@ game.rect.height = vh(100);
 game.props.image = canvas;
 game.style.border_width = 0;
 
-let best = parseInt(FS.getFromPath("/user/desktop/game_best"));
+let best = parseInt(await FS.getFromPath("/user/desktop/game_best"));
 
 game.child(
     new Div({ text: "Best Score: " + best, style: { color: "white", border_width: 0 } })
@@ -285,8 +285,8 @@ Number.prototype.clamp = function (min, max) {
 };
 
 
-Shell.onExit = () => {
-    FS.addFile("/user/desktop/game_best", best.toString()); 
+Shell.onExit = async () => {
+    await FS.addFile("/user/desktop/game_best", best.toString()); 
     canvas.remove();
 }
 

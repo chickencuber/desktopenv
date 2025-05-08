@@ -9,12 +9,12 @@ const {
     Img,
 } = await use("~/ui.exe");
 
-const _default = loadImage(getFile("~/icons/default.png"))
+const _default = loadImage(await getFile("~/icons/default.png"))
 
 const background = new Img(
     {
         props: {
-            image: loadImage(getFile("~/wallpapers/default.png"))
+            image: loadImage(await getFile("~/wallpapers/default.png"))
         },
         style: {
             border_width: 0,
