@@ -11,14 +11,13 @@ const {
 
 const _default = loadImage(await getFile("~/icons/default.png"))
 
-const background = new Img(
-    {
-        props: {
-            image: loadImage(await getFile("~/wallpapers/default.png"))
-        },
-        style: {
-            border_width: 0,
-        }
+const background = new Img({
+    props: {
+        image: loadImage(await getFile("/user/desktop/wallpaper.png"))
+    },
+    style: {
+        border_width: 0,
+    }
 })
 background.rect.width = vw(100);
 background.rect.height = vh(100);
@@ -32,13 +31,13 @@ const windows = new Div({
         border_width: 0,
     }
 });
-const bar = new Div({
+const foreground = new Div({
     style: {
         border_width: 0,
     }
 });
 
-root.child(background, desktop, windows, bar)
+root.child(background, desktop, windows, foreground);
 
 const {fakeShell} = await use("~/fakeShell.exe");
 const shells = [];
@@ -128,7 +127,8 @@ function createWindow(shell) {
     window.rect.width = s + 10;
     window.rect.height = s + 25;
     const close = new Button({
-        text: "\u{1F5D9}", style: {
+        text: "\u{1F5D9}", 
+        style: {
             background: "#f00",
             border_width: 0,
             font: Shell.gl.fonts.Symbols,
@@ -427,8 +427,6 @@ function createWindow(shell) {
     shell.shell._functions.y = () => Shell.gl.mouse.y - img.getRect().y;
     shell.shell._functions.w = () => img.getRect().width;
     shell.shell._functions.h = () => img.getRect().height;
-    shell.shell.gl.setup();
-
 
     function change() {
         handle_y.rect.width = window.rect.width - 5;
@@ -447,9 +445,6 @@ function createWindow(shell) {
     windows.child(window);
 }
 
-runApp("/bin/desktop/game.exe")
-runApp("examples graphics")
-
 root.on(Event.tick, () => {
     for(const shell of shells) {
         if (shell.shell.gl.ready && !shell.shell.gl.has_window) {
@@ -464,6 +459,227 @@ root.on(Event.windowResized, () => {
     background.rect.height = vh(100);
 })
 
-return await run();
+const bar = new Div({
+    props: {
+        active: 0,
+        speed: 4,
+    },
+    style: {
+        border_width: 0,
+        background: "#252d35",
+        border_radius: 20,
+    },
+});
+bar.rect.width = root.rect.width;
+bar.rect.height = 80;
+bar.rect.y = vh(100) - bar.props.active;
+
+let menu = false;
+
+
+const menu_elt = new Div({
+    props: {
+        active: 0,
+        speed: 20,
+    },
+    style: {
+        background: "#252d35",
+        border_width: 0,
+        border_radius: 20,
+    },
+});
+
+menu_elt.rect.width = 400;
+menu_elt.rect.height = 400;
+menu_elt.rect.x = -menu_elt.rect.width;
+menu_elt.rect.y = vh(100) - (bar.rect.height / 2 + 5)- menu_elt.rect.height;
+
+root.on(Event.tick, () => {
+    if(Shell.gl.mouse.y >= vh(100) - 10 || menu) {
+        bar.props.active += bar.props.speed;
+        if(bar.props.active > bar.rect.height / 2) {
+            bar.props.active = bar.rect.height / 2;
+        }
+    } else if(Shell.gl.mouse.y < vh(100) - bar.rect.height / 2) {
+        bar.props.active -= bar.props.speed;
+        if(bar.props.active < 0) {
+            bar.props.active = 0;
+        }
+    }
+    bar.rect.y = vh(100) - bar.props.active;
+    if(menu) {
+        menu_elt.props.active += menu_elt.props.speed;
+        if(menu_elt.props.active > menu_elt.rect.width / 2) menu_elt.props.active = menu_elt.rect.width / 2
+    } else {
+        menu_elt.props.active -= menu_elt.props.speed;
+        if(menu_elt.props.active < 0) menu_elt.props.active = 0;
+    }
+    menu_elt.rect.x = (-menu_elt.rect.width) + menu_elt.props.active
+});
+
+root.on(Event.windowResized, () => {
+    bar.rect.width = root.rect.width;
+    bar.rect.y = vh(100) - bar.props.active;
+    menu_elt.rect.y = vh(100) - (bar.rect.height / 2 + 2)- menu_elt.rect.height;
+});
+
+foreground.child(bar, menu_elt);
+
+const button = new Button({
+    text: "\u2022",
+    style: {
+        background: "#40464e",
+        color: "white",
+        border_radius: 100,
+        border_width: 0,
+        margin_left: 8.5,
+        margin_top: -10.5,
+        size: 40,
+        font: Shell.gl.fonts.Symbols,
+    } 
+});
+
+
+button.rect.absolute = false;
+button.rect.x = 2;
+button.rect.y = 2;
+button.rect.width = 35;
+button.rect.height = 35;
+
+const power = new Button({
+    text: "\u23FB",
+    style: {
+        background: "#40464e",
+        color: "white",
+        border_radius: 100,
+        border_width: 0,
+        margin_top: -1,
+        margin_left: 4,
+        font: Shell.gl.fonts.Symbols,
+    }
+})
+
+power.rect.absolute = false;
+power.rect.width = 25;
+power.rect.height = 25;
+power.rect.x = vw(100, menu_elt) - power.rect.width - 5;
+power.rect.y = vh(100, menu_elt) - power.rect.height - 5;
+
+menu_elt.child(power);
+
+function toggleMenu() {
+    menu = !menu
+    if(menu) {
+        button.style.background = "#98cbff";
+        button.style.color = "#40464e";
+    } else {
+        button.style.background = "#40464e";
+        button.style.color = "white";
+    }
+}
+
+button.on(Event.mousePressed, () => {
+    toggleMenu();
+});
+
+bar.child(button)
+
+root.on(Event.mousePressed, () => {
+    if(bar.collide() || menu_elt.collide() || !menu) return;
+    toggleMenu()
+})
+
+root.on(Event.keyPressed, (key) => {
+    if(key == ALT) {
+        toggleMenu();
+    }
+});
+
+const applets = []
+
+function createApplet(app, ctx) {
+    const applet= fakeShell(
+            () => Shell.gl.mouse.x - ctx.getRect().x,
+            () => Shell.gl.mouse.y - ctx.getRect().y,
+            () => ctx.getRect().width,
+            () => ctx.getRect().height,
+        );
+    applet.runApp = runApp;
+    ctx.on(Event.tick, () => {
+        ctx.props.image = applet.gl.canvas;
+        if(!applet.gl.canvas) return;
+        if(pw !== ctx.getRect().width || ph !== ctx.getRect().height) {
+            pw = ctx.getRect().width; 
+            ph = ctx.getRect().height; 
+            applet.windowResized();
+        }
+        applet.gl.draw();
+    });
+    let pw = 400;
+    let ph = 400;
+    ctx.on(Event.keyPressed, (...args) => {
+        applet.keyPressed(...args);
+    });
+    ctx.on(Event.keyReleased, (...args) => {
+        applet.keyReleased(...args);
+    });
+    ctx.on(Event.mouseClicked, (...args) => {
+        applet.mouseClicked(...args);
+    });
+    ctx.on(Event.mouseDragged, (...args) => {
+        applet.mouseDragged(...args);
+    });
+    ctx.on(Event.mousePressed, (...args) => {
+        applet.mousePressed(...args);
+    });
+    ctx.on(Event.mouseReleased, (...args) => {
+        applet.mouseReleased(...args);
+    });
+    ctx.on(Event.mouseMoved, (...args) => {
+        applet.mouseMoved(...args);
+    });
+    ctx.on(Event.mouseWheel, (...args) => {
+        applet.mouseWheel(...args);
+    });
+
+    applet.run(app).then(() => {
+        if(applet.gl.canvas) {
+            const h = applet.gl.canvas;
+            applet.gl.canvas = undefined;
+            h.remove()
+        }
+        applets.splice(applets.indexOf(applet), 1);
+    });
+    applets.push(applet);
+}
+
+const menu_applet = new Img({
+    style: {
+        border_width: 0,
+    }
+});
+
+menu_applet.rect.width = menu_elt.rect.width / 2 - 20;
+menu_applet.rect.height = menu_elt.rect.height - 30;
+menu_applet.rect.x = menu_elt.rect.width / 2;
+menu_applet.rect.absolute = false;
+createApplet("/bin/desktop/applets/menu.exe", menu_applet);
+menu_elt.child(menu_applet);
+
+function clean() {
+    for(const shell of shells) {
+        shell.shell.exit = true;
+    }
+    for(const applet of applets) {
+        applet.exit = true;
+    }
+}
+
+await run(r => {
+    power.on(Event.mousePressed, () => {
+        clean()
+        r();
+    })
+});
 
 

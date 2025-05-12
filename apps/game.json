@@ -1,0 +1,6 @@
+{
+    "name": "Tube Rush",
+    "icon": "/bin/desktop/icons/game.png",
+    "terminal": false,
+    "exec": "/bin/desktop/game.exe"
+}
