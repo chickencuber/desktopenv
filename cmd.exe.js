@@ -277,7 +277,7 @@ function createWindow(shell) {
     img.on(Event.mouseWheel, (...args) => {
         shell.shell.mouseWheel(...args);
     });
-    img.on(Event.tick, () => {
+    img.on(Event.tick, (t = false) => {
         if(!shells.includes(shell)) {
             window.remove();
         }
@@ -287,7 +287,7 @@ function createWindow(shell) {
             shell.shell.windowResized();
         }
         if(shell.shell.gl.ready) {
-            shell.shell.gl.draw();
+            shell.shell.gl.draw(t);
         }
     })
 
@@ -605,7 +605,7 @@ function createApplet(app, ctx) {
             () => ctx.getRect().height,
         );
     applet.runApp = runApp;
-    ctx.on(Event.tick, () => {
+    ctx.on(Event.tick, (f = false) => {
         ctx.props.image = applet.gl.canvas;
         if(!applet.gl.canvas) return;
         if(pw !== ctx.getRect().width || ph !== ctx.getRect().height) {
@@ -613,7 +613,7 @@ function createApplet(app, ctx) {
             ph = ctx.getRect().height; 
             applet.windowResized();
         }
-        applet.gl.draw();
+        applet.gl.draw(f);
     });
     let pw = 400;
     let ph = 400;
@@ -651,6 +651,7 @@ function createApplet(app, ctx) {
         applets.splice(applets.indexOf(applet), 1);
     });
     applets.push(applet);
+    return applet;
 }
 
 const menu_applet = new Img({
@@ -663,7 +664,7 @@ menu_applet.rect.width = menu_elt.rect.width / 2 - 20;
 menu_applet.rect.height = menu_elt.rect.height - 30;
 menu_applet.rect.x = menu_elt.rect.width / 2;
 menu_applet.rect.absolute = false;
-createApplet("/bin/desktop/applets/menu.exe", menu_applet);
+createApplet("/bin/desktop/applets/menu.exe", menu_applet).toggleMenu = toggleMenu;
 menu_elt.child(menu_applet);
 
 function clean() {

@@ -100,12 +100,20 @@ class Element {
         this.render();
         this.children.forEach((v) => v._render());
     }
-    tick() {
+    tick(cc = false) {
+        let c = false;
         for (let i = this.children.length - 1; i >= 0; i--) {
-            this.children[i].tick();
+            if(this.children[i].tick(c||cc)) {
+                c = true;
+            }
         }
-        this._tick.forEach((v) => v());
-        return true;
+        if(this.collide() && !cc) {
+            this.hover = true;
+        } else {
+            this.hover = false
+        }
+        this._tick.forEach((v) => v(cc));
+        return this.hover || c;
     }
     mouseWheel(x, y) {
         for (let i = this.children.length - 1; i >= 0; i--) {
@@ -209,28 +217,17 @@ class Element {
         this._removed.forEach((v) => v());
         return true;
     }
-    mouseMoved(f = false) {
-        if(f) {
-            this.hover = false;
-            for (const child of this.children) {
-                child.mouseMoved(true);
-            }
-            return false;
-        }
-        let ii  = false;
+    mouseMoved() {
         for (let i = this.children.length - 1; i >= 0; i--) {
-            if (this.children[i].mouseMoved(ii)) {
-                ii = true;
+            if (this.children[i].mouseMoved()) {
+                break;
             }
         }
-        if (this.collide()) {
-            this.hover = true;
+        if (this.hover) {
             this._mouseMoved.forEach((v) => v());
             return true;
-        } else {
-            this.hover = false;
-        }
-        return ii;
+        } 
+        return false;
     }
     windowResized() {
         for (let i = this.children.length - 1; i >= 0; i--) {
@@ -436,8 +433,8 @@ const root = new RootElement();
 
 focus.push(root);
 
-Shell.gl.draw = () => {
-    root.tick();
+Shell.gl.draw = (cc = false) => {
+    root.tick(cc);
     root._render();
 };
 

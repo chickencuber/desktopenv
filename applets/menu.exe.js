@@ -50,12 +50,22 @@ async function update() {
             }
         });
         text.rect.absolute = false;
-        h.child(text)
+        text.rect.x = text.rect.height;
+        const img = new Img({
+            props: {
+                image: loadImage(await getFile(app.icon ?? "~/icons/default.png")),
+            }
+        })
+        img.rect.width = text.rect.height;
+        img.rect.height = text.rect.height;
+        img.rect.absolute = false;
+        h.child(text, img)
         h.rect.width = vw(100);
         h.rect.height = text.rect.height;
         y += h.rect.height;
         h.on(Event.mousePressed, () => {
-            Shell.runApp(app.exec)
+            Shell.toggleMenu();
+            Shell.runApp(app.exec);
         })
         scroll.child(h);
     }
