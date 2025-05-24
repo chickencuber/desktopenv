@@ -54,6 +54,11 @@ class Element {
         this._default();
         this._start();
     }
+    move(i = this.parent.children.length) {
+        const idx = this.parent.children.indexOf(this);
+        this.parent.children.splice(idx, 1);
+        this.parent.children.splice(i, 0, this);
+    }
     remove() {
         if (!this.parent) throw new Error("there is no parent to element");
         if (this.focused) focus.splice(focus.indexOf(this), 1);

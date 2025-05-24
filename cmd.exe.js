@@ -72,10 +72,17 @@ function runApp(app) {
 
 let dragging = false;
 
-function drag(elt, {on_drag_start = () => {}, while_drag = () => {}, on_drag_end = () => {}, allow=[], block_x = false, block_y = false, no_children = false} = {}) {
+function drag(elt, {quit = () => {}, on_drag_start = () => {}, while_drag = () => {}, on_drag_end = () => {}, allow=[], block_x = false, block_y = false, no_children = false} = {}) {
     let drag = false;
     let cx = 0;
     let cy = 0;
+    quit(() => {
+        if(drag) {
+            drag = false;
+            dragging = false;
+            on_drag_end();
+        }
+    });
     elt.on(Event.mousePressed, () => {
         if(dragging) return;
         if(no_children) for(const child of elt.children) {
@@ -112,12 +119,8 @@ function drag(elt, {on_drag_start = () => {}, while_drag = () => {}, on_drag_end
     })
 }
 
-function to_front(elt) {
-    elt.parent.children.splice(elt.parent.children.indexOf(elt), 1);
-    elt.parent.child(elt);
-}
-
 function createWindow(shell) {
+    let quitDrag;
     const window = new Div({
         style: {
             background: "#ffffff",
@@ -191,6 +194,7 @@ function createWindow(shell) {
             change_size.text = "\u{1F5D6}";
         }
         change_size.hover = change_size.collide();
+        setTimeout(quitDrag, 0);
     });
 
     const icon = new Img({
@@ -223,8 +227,11 @@ function createWindow(shell) {
     name.rect.x = close.rect.width + 7;
 
     drag(window, {
+        quit(fn) {
+            quitDrag = fn;
+        },
         no_children: true,
-        allow: [name],
+        allow: [name, icon],
         on_drag_start() {
             if(full) {
                 return true;
@@ -236,7 +243,7 @@ function createWindow(shell) {
         },
     })
     window.on(Event.mousePressed, () => {
-        to_front(window);
+        window.move();
     })
     const img = new Img({
         props: {

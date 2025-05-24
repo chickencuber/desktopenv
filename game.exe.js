@@ -353,8 +353,7 @@ function draw() {
                 return;
             }
             if (gameData.score > best) best = gameData.score;
-            game.children[0].text = `Best Score: ${best}
-            Last Score: ${gameData.score}`;
+            game.children[0].text = `Best Score: ${best}\nLast Score: ${gameData.score}`;
             scene(menu);
             return;
         }
