@@ -130,6 +130,20 @@ function createWindow(shell) {
             border_width: 1,
         }
     });
+    let show = true;
+    const old = window.move.bind(window);
+    window.move = function(...args) {
+        if(show) {
+            return old(...args);
+        } else {
+            show = true;
+            windows.child(window);
+        }
+    }
+    function hide() {
+        show = false;
+        window.remove();
+    }
     shell.window = window;
     const s = 400;
     window.rect.width = s + 10;
@@ -171,17 +185,39 @@ function createWindow(shell) {
         }
     })
 
-
-
     change_size.style.margin_left = 2;
     change_size.rect.y = 1;
     change_size.style.margin_top = -2;
     change_size.rect.absolute = false;
     change_size.rect.autosize = false;
-    let full = false;
-    let prew;
     change_size.rect.height = change_size.rect.width - 1;
     change_size.rect.x = close.rect.x - change_size.rect.width - 5;
+
+    const minimize = new Button({
+        text: "\u{1F5D5}", 
+        style: {
+            border_width: 0,
+            color: "#ffffff",
+            background: "#00000000",
+            size: 17,
+            font: Shell.gl.fonts.Symbols,
+        }, 
+        style_hover: {
+            background: "#555D65"
+        }
+    })
+
+    minimize.style.margin_left = 2;
+    minimize.rect.y = 1;
+    minimize.style.margin_top = -2;
+    minimize.rect.absolute = false;
+    minimize.rect.autosize = false;
+    minimize.rect.height = minimize.rect.width - 1;
+    minimize.rect.x = change_size.rect.x - minimize.rect.width - 5;
+    minimize.on(Event.mousePressed, hide);
+
+    let full = false;
+    let prew;
     change_size.on(Event.mousePressed, () => {
         if(!full) {
             prew = {
@@ -258,6 +294,7 @@ function createWindow(shell) {
         },
     })
     window.on(Event.mousePressed, () => {
+        if(minimize.hover) return;
         window.move();
     })
     const img = new Img({
@@ -466,7 +503,7 @@ function createWindow(shell) {
         img.rect.height= window.rect.height - 25;     
     }
 
-    window.child(img, handle_x, handle_y, handle_c,name, close, change_size, icon);
+    window.child(img, handle_x, handle_y, handle_c,name, close, change_size, icon, minimize);
     windows.child(window);
 }
 
@@ -684,7 +721,9 @@ taskbar.rect.absolute = false;
 taskbar.rect.height = bar.rect.height / 2 - 2;
 taskbar.rect.y = 1;
 taskbar.rect.x = button.rect.x + button.rect.width + 10;
-createApplet("/bin/desktop/applets/taskbar.exe", taskbar);
+createApplet("/bin/desktop/applets/taskbar.exe", taskbar).get_windows = () => {
+    return shells.filter(v => v.window !== null);
+};
 bar.child(taskbar);
 let clock = await FS.getFromPath("/user/desktop/24hour") === "0"
 function gettime(view = false) {
