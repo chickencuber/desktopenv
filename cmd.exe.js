@@ -501,6 +501,7 @@ function createWindow(shell) {
         handle_c.rect.y = window.rect.height - 5;
         handle_x.rect.height = vh(100, window) - 20;
         img.rect.height= window.rect.height - 25;     
+        minimize.rect.x = change_size.rect.x - minimize.rect.width - 5;
     }
 
     window.child(img, handle_x, handle_y, handle_c,name, close, change_size, icon, minimize);
