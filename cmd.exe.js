@@ -720,7 +720,7 @@ time.on(Event.mousePressed, async () => {
     }
 })
 
-time.rect.y = 10;
+time.rect.y = 8;
 time.rect.height = 25;
 time.rect.width = 100;
 time.style.margin_top = 4;
