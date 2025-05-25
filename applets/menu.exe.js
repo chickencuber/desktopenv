@@ -38,8 +38,11 @@ async function update() {
     for(const app of apps) {
         const h = new Button({
             style: {
-
-            } 
+                background: "#00000000"
+            },
+            style_hover: {
+                background: "#555D65",
+            }
         });
         h.rect.absolute = false;
         h.rect.y = y;
@@ -47,6 +50,7 @@ async function update() {
             text: app.name,
             style: {
                 border_width: 0,
+                color: "white",
             }
         });
         text.rect.absolute = false;

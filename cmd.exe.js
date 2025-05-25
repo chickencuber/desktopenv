@@ -56,6 +56,7 @@ function runApp(app) {
             () => functions.h(),
         ),
         app,
+        window: null,
     }
     shell.shell.runApp = runApp;
     shell.shell._functions = functions;
@@ -123,39 +124,51 @@ function createWindow(shell) {
     let quitDrag;
     const window = new Div({
         style: {
-            background: "#ffffff",
+            background: "#2E2E32",
+            border_color: "#ffffff",
+            border_radius: 10,
+            border_width: 1,
         }
     });
+    shell.window = window;
     const s = 400;
     window.rect.width = s + 10;
     window.rect.height = s + 25;
     const close = new Button({
         text: "\u{1F5D9}", 
         style: {
-            background: "#f00",
+            color: "white",
+            background: "#00000000",
             border_width: 0,
             font: Shell.gl.fonts.Symbols,
         }, 
         style_hover: {
-            background: "#d00"
+            background: "#555D65",
         }
     })
 
     close.style.margin_left = 3;
     close.style.margin_top = -7;
+    close.rect.y = 2;
     close.rect.absolute = false;
     close.rect.autosize = false;
 
     close.rect.height = close.rect.width;
-    close.rect.x = window.rect.width - close.rect.width - 2;
+    close.rect.x = window.rect.width - close.rect.width - 5;
     close.on(Event.mousePressed, () => shell.shell.exit = true)
 
     const change_size = new Button({
-        text: "\u{1F5D6}", style: {
+        text: "\u{1F5D6}", 
+        style: {
             border_width: 0,
+            color: "#ffffff",
+            background: "#00000000",
             size: 17,
             font: Shell.gl.fonts.Symbols,
         }, 
+        style_hover: {
+            background: "#555D65"
+        }
     })
 
 
@@ -211,8 +224,10 @@ function createWindow(shell) {
     icon.rect.height = close.rect.height - 2;
     icon.rect.absolute = false;
     icon.rect.x = 5;
+    icon.rect.y = 2;
     const name = new Div({
         style: {
+            color: "#ffffff",
             border_width: 0,
             size:17,
         }
@@ -250,7 +265,8 @@ function createWindow(shell) {
             image: shell.shell.gl.canvas
         },
         style: {
-             border_width: 1,           
+            border_color: "white",
+            border_width: 0,           
         }
     })
     img.rect.x = 5;
@@ -395,6 +411,8 @@ function createWindow(shell) {
     handle_c.rect.y = window.rect.height - 5;
     let hc = false;
     handle_c.on(Event.tick, () => {
+        img.style.border_width = img.focused? 1: 0;
+        window.style.border_width = window.hover? 2: 1;
         if(dragging) return;
         if(full) {
             Shell.gl.cursor = "default";
@@ -440,7 +458,7 @@ function createWindow(shell) {
         img.rect.width = window.rect.width - 10;
         handle_x.rect.x = window.rect.width - 5;
         handle_y.rect.y = window.rect.height - 5;
-        close.rect.x = window.rect.width - close.rect.width - 2;
+        close.rect.x = window.rect.width - close.rect.width - 5;
         change_size.rect.x = close.rect.x - change_size.rect.width - 5;
         handle_c.rect.x = window.rect.width - 5;
         handle_c.rect.y = window.rect.height - 5;
@@ -452,19 +470,6 @@ function createWindow(shell) {
     windows.child(window);
 }
 
-root.on(Event.tick, () => {
-    for(const shell of shells) {
-        if (shell.shell.gl.ready && !shell.shell.gl.has_window) {
-            shell.shell.gl.has_window = true;
-            createWindow(shell);
-        }
-    }
-})
-
-root.on(Event.windowResized, () => {
-    background.rect.width = vw(100);
-    background.rect.height = vh(100);
-})
 
 const bar = new Div({
     props: {
@@ -524,11 +529,6 @@ root.on(Event.tick, () => {
     menu_elt.rect.x = (-menu_elt.rect.width) + menu_elt.props.active
 });
 
-root.on(Event.windowResized, () => {
-    bar.rect.width = root.rect.width;
-    bar.rect.y = vh(100) - bar.props.active;
-    menu_elt.rect.y = vh(100) - (bar.rect.height / 2 + 2)- menu_elt.rect.height;
-});
 
 foreground.child(bar, menu_elt);
 
@@ -674,6 +674,74 @@ menu_applet.rect.absolute = false;
 createApplet("/bin/desktop/applets/menu.exe", menu_applet).toggleMenu = toggleMenu;
 menu_elt.child(menu_applet);
 
+const taskbar = new Img({
+    style: {
+        border_width: 0,
+    }
+})
+
+taskbar.rect.absolute = false;
+taskbar.rect.height = bar.rect.height / 2 - 2;
+taskbar.rect.y = 1;
+taskbar.rect.x = button.rect.x + button.rect.width + 10;
+createApplet("/bin/desktop/applets/taskbar.exe", taskbar);
+bar.child(taskbar);
+let clock = await FS.getFromPath("/user/desktop/24hour") === "0"
+function gettime(view = false) {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    if(clock) {
+        hours = hours % 12;
+        hours = hours ? hours : 12; // the hour '0' should be '12'
+    }
+
+    const currentTime = `${hours.toString().padStart(2, "0")}:${minutes}${view | !clock? `:${seconds}`:` ${ampm}`}`;
+    return currentTime;
+}
+const time = new Div({
+    text: gettime(),
+    style: {
+        border_width: 0,
+        border_radius: 10,
+        background: "#4D545E",
+        color: "white",
+    }
+});
+time.on(Event.mousePressed, async () => {
+    clock = !clock;
+    if(clock) {
+        await FS.addFile("/user/desktop/24hour", "0");
+    } else {
+        await FS.addFile("/user/desktop/24hour", "1");
+    }
+})
+
+time.rect.y = 10;
+time.rect.height = 25;
+time.rect.width = 100;
+time.style.margin_top = 4;
+time.style.margin_left = 7;
+time.rect.x = vw(100) - time.rect.width - button.rect.x - 5
+time.rect.autosize = false;
+time.rect.absolute = false;
+taskbar.rect.width = vw(100) - (taskbar.rect.x + button.rect.width) - time.rect.width;
+
+bar.child(time);
+
+root.on(Event.tick, () => {
+    for(const shell of shells) {
+        if (shell.shell.gl.ready && !shell.shell.gl.has_window) {
+            shell.shell.gl.has_window = true;
+            createWindow(shell);
+        }
+    }
+    time.text = gettime(time.hover);
+})
+
 function clean() {
     for(const shell of shells) {
         shell.shell.exit = true;
@@ -682,6 +750,16 @@ function clean() {
         applet.exit = true;
     }
 }
+
+root.on(Event.windowResized, () => {
+    background.rect.width = vw(100);
+    background.rect.height = vh(100);
+    bar.rect.width = root.rect.width;
+    bar.rect.y = vh(100) - bar.props.active;
+    menu_elt.rect.y = vh(100) - (bar.rect.height / 2 + 2)- menu_elt.rect.height;
+    time.rect.x = vw(100) - time.rect.width - button.rect.x - 5
+    taskbar.rect.width = vw(100) - (taskbar.rect.x + button.rect.width) - time.rect.width;
+});
 
 await run(r => {
     power.on(Event.mousePressed, () => {

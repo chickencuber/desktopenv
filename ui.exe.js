@@ -417,16 +417,16 @@ class Img extends Element {
         Shell.gl.canvas.fill(border_color);
         if (border_width !== 0)
             Shell.gl.canvas.rect(
-                x + border_width / 2,
-                y + border_width / 2,
-                width,
-                height,
+                x,
+                y,
+                width + border_width * 2,
+                height + border_width * 2,
             );
         if (this.props.image) {
             Shell.gl.canvas.image(
                 this.props.image,
-                x + border_width / 2,
-                y + border_width / 2,
+                x + border_width,
+                y + border_width,
                 width,
                 height,
             );
