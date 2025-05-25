@@ -60,8 +60,8 @@ async function update() {
                 image: loadImage(await getFile(app.icon ?? "~/icons/default.png")),
             }
         })
-        img.rect.width = text.rect.height;
-        img.rect.height = text.rect.height;
+        img.rect.width = h.rect.height;
+        img.rect.height = h.rect.height;
         img.rect.absolute = false;
         h.child(text, img)
         h.rect.width = vw(100);
