@@ -60,10 +60,14 @@ async function update() {
         const img = new Img({
             props: {
                 image: loadImage(await getFile(app.icon ?? "~/icons/default.png")),
+            },
+            style: {
+                border_width: 0,
             }
         })
         img.rect.width = text.rect.height;
         img.rect.height = text.rect.height;
+        text.rect.x = text.rect.height + 2;
         img.rect.absolute = false;
         h.child(text, img)
         h.rect.width = vw(100);
