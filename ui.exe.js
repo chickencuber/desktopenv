@@ -73,6 +73,16 @@ class Element {
             throw new Error("not defined");
         }
     }
+    active(txt, ...args) {
+        try {
+            for (let i = this.children.length - 1; i >= 0; i--) {
+                this.children[i].active(txt, ...args);
+            }
+            this["_" + txt].forEach(v => v(...args));
+        } catch (e) {
+            throw new Error("not defined");
+        }
+    }
     removeEvent(txt, func) {
         try {
             this["_" + txt].splice(this["_" + txt].indexOf(func), 1);

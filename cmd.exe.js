@@ -39,6 +39,74 @@ const foreground = new Div({
 
 root.child(background, desktop, windows, foreground);
 
+let context = null;
+let setContext = false;
+
+/**
+    * @param {Record<string, () => void>} obj 
+    */
+function openContext(obj) {
+    context = new Div({
+        style: {
+            border_width: 1,
+            border_color: "#fff",
+            background: "#252d35",
+            border_radius: 10,
+        }
+    })
+    let y = 5;
+    for(const [k, v] of Object.entries(obj)) {
+        const button = new Button({
+            text: k,
+            style: {
+                border_width: 0,
+                border_color: "#fff",
+                color: "#fff",
+                background: "#00000000",
+            },
+            style_hover: {
+                background: "#555D65",
+            }
+        }) 
+        button.on(Event.mousePressed, (mouse) => {
+            if(mouse === RIGHT) return;
+            v();
+        });
+        button.rect.absolute = false;
+        button.rect.x = 5;
+        button.rect.y = y;
+        y += button.rect.height + 5;
+        context.rect.width = Math.max(context.rect.width, button.rect.width + 10);
+        context.child(button);
+    } 
+    context.rect.height = y + 0;
+    for(const child of context.children) {
+        child.rect.width = context.rect.width - 10;
+    }
+    if(Shell.gl.mouse.x + context.rect.width > root.rect.width) {
+        context.rect.x = Shell.gl.mouse.x - context.rect.width;
+    } else {
+        context.rect.x = Shell.gl.mouse.x;
+    }
+    if(Shell.gl.mouse.y + context.rect.height > root.rect.height) {
+        context.rect.y = Shell.gl.mouse.y - context.rect.height;
+    } else {
+        context.rect.y = Shell.gl.mouse.y;
+    }
+    foreground.child(context);
+    setTimeout(() => {
+        setContext = true;
+    }, 100);
+}
+
+root.on(Event.mousePressed, () => {
+    if(context !== null && setContext) {
+        context.remove();
+        context = null;
+        setContext = false;
+    }
+});
+
 const {fakeShell} = await use("~/fakeShell.exe");
 const shells = [];
 function runApp(app) {
@@ -59,6 +127,7 @@ function runApp(app) {
         window: null,
     }
     shell.shell.runApp = runApp;
+    shell.shell.openContext = openContext;
     shell.shell._functions = functions;
     shell.shell.run(app).then(() => {
         shells.splice(shells.indexOf(shell), 1);
@@ -84,7 +153,8 @@ function drag(elt, {quit = () => {}, on_drag_start = () => {}, while_drag = () =
             on_drag_end();
         }
     });
-    elt.on(Event.mousePressed, () => {
+    elt.on(Event.mousePressed, (mouse) => {
+        if(mouse === RIGHT) return;
         if(dragging) return;
         if(no_children) for(const child of elt.children) {
             if(allow.includes(child)) {
@@ -140,7 +210,8 @@ function createWindow(shell) {
             windows.child(window);
         }
     }
-    function hide() {
+    function hide(mouse) {
+        if(mouse === RIGHT) return;
         show = false;
         window.remove();
     }
@@ -169,7 +240,10 @@ function createWindow(shell) {
 
     close.rect.height = close.rect.width;
     close.rect.x = window.rect.width - close.rect.width - 5;
-    close.on(Event.mousePressed, () => shell.shell.exit = true)
+    close.on(Event.mousePressed, (mouse) => {
+        if(mouse === RIGHT) return;
+        shell.shell.exit = true
+    })
 
     const change_size = new Button({
         text: "\u{1F5D6}", 
@@ -218,7 +292,8 @@ function createWindow(shell) {
 
     let full = false;
     let prew;
-    change_size.on(Event.mousePressed, () => {
+    change_size.on(Event.mousePressed, (mouse) => {
+        if(mouse === RIGHT) return;
         if(!full) {
             prew = {
                 x: window.rect.x,
@@ -248,7 +323,7 @@ function createWindow(shell) {
 
     const icon = new Img({
         style: {
-            border_width: 1,
+            border_width: 0,
         }
     });
     icon.props = new Proxy({}, {
@@ -259,7 +334,7 @@ function createWindow(shell) {
     icon.rect.width = close.rect.width - 2;
     icon.rect.height = close.rect.height - 2;
     icon.rect.absolute = false;
-    icon.rect.x = 5;
+    icon.rect.x = 6;
     icon.rect.y = 2;
     const name = new Div({
         style: {
@@ -293,7 +368,8 @@ function createWindow(shell) {
             Shell.gl.cursor = "default";
         },
     })
-    window.on(Event.mousePressed, () => {
+    window.on(Event.mousePressed, (mouse) => {
+        if(mouse === RIGHT) return;
         if(minimize.hover) return;
         window.move();
     })
@@ -504,6 +580,15 @@ function createWindow(shell) {
         minimize.rect.x = change_size.rect.x - minimize.rect.width - 5;
     }
 
+    window.on(Event.mousePressed, (mouse) => {
+        if(mouse===RIGHT) {
+            openContext({
+                "Minimize": () => minimize.active(Event.mousePressed, LEFT),
+                [full? "Restore": "Maximize"]: () => change_size.active(Event.mousePressed, LEFT),
+                "Close": () => close.active(Event.mousePressed, LEFT),
+            });
+        }
+    })
     window.child(img, handle_x, handle_y, handle_c,name, close, change_size, icon, minimize);
     windows.child(window);
 }
@@ -623,13 +708,15 @@ function toggleMenu() {
     }
 }
 
-button.on(Event.mousePressed, () => {
+button.on(Event.mousePressed, (mouse) => {
+    if(mouse === RIGHT) return;
     toggleMenu();
 });
 
 bar.child(button)
 
-root.on(Event.mousePressed, () => {
+root.on(Event.mousePressed, (mouse) => {
+    if(mouse === RIGHT) return;
     if(bar.collide() || menu_elt.collide() || !menu) return;
     toggleMenu()
 })
@@ -650,6 +737,7 @@ function createApplet(app, ctx) {
             () => ctx.getRect().height,
         );
     applet.runApp = runApp;
+    applet.openContext = openContext;
     ctx.on(Event.tick, (f = false) => {
         ctx.props.image = applet.gl.canvas;
         if(!applet.gl.canvas) return;
@@ -751,7 +839,8 @@ const time = new Div({
         color: "white",
     }
 });
-time.on(Event.mousePressed, async () => {
+time.on(Event.mousePressed, async (mouse) => {
+    if(mouse === RIGHT) return;
     clock = !clock;
     if(clock) {
         await FS.addFile("/user/desktop/24hour", "0");
@@ -802,7 +891,8 @@ root.on(Event.windowResized, () => {
 });
 
 await run(r => {
-    power.on(Event.mousePressed, () => {
+    power.on(Event.mousePressed, (mouse) => {
+    if(mouse === RIGHT) return;
         clean()
         r();
     })
