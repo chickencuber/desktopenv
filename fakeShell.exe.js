@@ -101,6 +101,8 @@ function fakeShell(x, y, width, height) {
             getLine() {
                 return this.text().split("\n")[shell.terminal.cursor.y] || "";
             },
+            width: 0,
+            height: 0,
             clear() {
                 shell.terminal.cursor.x = 0;
                 shell.terminal.cursor.y = 0;

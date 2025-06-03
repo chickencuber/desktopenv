@@ -91,6 +91,14 @@ function fakeShell() {
                 }
                 return term.text();
             },
+            get width() {
+                const charWidth = 13.2;
+                return Math.floor(canvas.width / charWidth);
+            },
+            get height() {
+                const charHeight = 29;
+                return Math.floor(canvas.height / charHeight);
+            },
             scroll: {
                 allow: false,
                 x: 0,
