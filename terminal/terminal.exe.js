@@ -10,6 +10,9 @@ let command = getPath("/user/desktop/terminal/.startup.sh");
 
 function fixCursor() {
     if (!shell.terminal.scroll.allow && running) return;
+    if(!running) {
+        shell.terminal.scroll.x = 0;
+    }
     if (getRect().right > shell.size.width) {
         shell.terminal.scroll.x += getRect().right - shell.size.width;
     } else if (getRect().left < 0) {
@@ -97,20 +100,26 @@ function renderText() {
         /**
             * @type {string[]}
             */
-        const parts = text.split(/\x1b\[([0-9A-Fa-f]{6})m/);
+            const parts = text.split(/\x1b\[([0-9A-Fa-f]{6})m/);
         parts.unshift("ffffff");
         for(let i = 1; i < parts.length; i+=2) {
             const text = parts[i];
             const color = "#"+parts[i-1];
             textGraphics.fill(color);
-            textGraphics.text(
-                text,
-                -shell.terminal.scroll.x + x,
-                -shell.terminal.scroll.y + y
-            );
-            const s = text.split("\n");
-            y += (s.length-1) * textGraphics.textLeading();
-            x = textGraphics.textWidth(s.at(-1));
+
+            text.split(/(\n)/).forEach(v => {
+                if(v === "\n") {
+                    x = 0;
+                    y += textGraphics.textLeading();
+                    return
+                }
+                textGraphics.text(
+                    v,
+                    -shell.terminal.scroll.x + x,
+                    -shell.terminal.scroll.y + y
+                );
+                x += textGraphics.textWidth(v);
+            });
         }
         lastRenderedText = text;
         lastx = shell.terminal.scroll.x;
@@ -179,7 +188,7 @@ const last = [];
 let buff = ""
 let cursorX = 0;
 function getCmd() {
-    return buff.trim() 
+    return buff?.trim() || ""
 }
 function add(char) {
     buff = buff.slice(0, cursorX) + char+ buff.slice(cursorX);
@@ -249,7 +258,7 @@ function keyPressed(keyCode, key) {
             break;
         case UP_ARROW:
             if (getCmd() === "" && last.length > 0) {
-                buff = add(last.pop());
+                add(last.pop());
             }
             break;
         case ENTER:
@@ -257,7 +266,7 @@ function keyPressed(keyCode, key) {
             break;
         case BACKSPACE:
             if (cursorX>0) {
-                buff= buff.slice(0, cursorX) + buff.slice(cursorX + 1);
+                buff= buff.slice(0, cursorX-1) + buff.slice(cursorX);
                 cursorX--;
                 shell.terminal.cursor.x--;
             }
