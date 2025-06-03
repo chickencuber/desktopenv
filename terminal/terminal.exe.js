@@ -44,7 +44,7 @@ function showCursor() {
                 Shell.gl.canvas.fill(0);
                 Shell.gl.canvas.text(
                     (() => {
-                        const txt = shell.terminal.text().split("\n");
+                        const txt = shell.terminal.text().split(/\x1b\[[0-9A-Fa-f]{6}m/).join("").split("\n");
                         if (txt[cursor.y]) {
                             return txt[cursor.y][cursor.x] || "";
                         }
@@ -92,18 +92,35 @@ function renderText() {
     const text = shell.terminal.text();
     if (text !== lastRenderedText || lastx !== shell.terminal.scroll.x || lasty !== shell.terminal.scroll.y) {
         textGraphics.background(0);
-        textGraphics.text(
-            text,
-            -shell.terminal.scroll.x,
-            -shell.terminal.scroll.y
-        );
+        let y = 0;
+        let x = 0;
+        /**
+            * @type {string[]}
+            */
+        const parts = text.split(/\x1b\[([0-9A-Fa-f]{6})m/);
+        parts.unshift("ffffff");
+        for(let i = 1; i < parts.length; i+=2) {
+            const text = parts[i];
+            const color = "#"+parts[i-1];
+            textGraphics.fill(color);
+            textGraphics.text(
+                text,
+                -shell.terminal.scroll.x + x,
+                -shell.terminal.scroll.y + y
+            );
+            const s = text.split("\n");
+            y += (s.length-1) * textGraphics.textLeading();
+            x = textGraphics.textWidth(s.at(-1));
+        }
         lastRenderedText = text;
         lastx = shell.terminal.scroll.x;
         lasty = shell.terminal.scroll.y;
     }
 }
 
+let _key = 0;
 Shell.gl.draw = () => {
+    fixCursor();
     Shell.gl.canvas.background(0);
     Shell.gl.canvas.textAlign(LEFT, TOP);
     Shell.gl.canvas.textSize(22);
@@ -131,11 +148,15 @@ Shell.gl.draw = () => {
             Shell.size.width,
             Shell.size.height
         );
-        if (frame % Math.floor(480 / Shell.deltaTime) === 0)
-            show_cursor = !show_cursor;
+        if(_key>0) {
+            _key--;
+            show_cursor = true;
+        } else {
+            if (frame % Math.floor(480 / Shell.deltaTime) === 0)
+                show_cursor = !show_cursor;
+        }
         frame++;
         if (show_cursor) showCursor();
-        fixCursor();
     }
 
     if (running) {
@@ -145,12 +166,6 @@ Shell.gl.draw = () => {
     }
 };
 
-function getCmd() {
-    return shell.terminal
-        .getLine()
-        .slice(shell.localVars.workingDir.length + 1)
-        .trim();
-}
 
 Shell.windowResized = () => {
     Shell.gl.resize();
@@ -161,6 +176,18 @@ Shell.windowResized = () => {
 
 const last = [];
 
+let buff = ""
+let cursorX = 0;
+function getCmd() {
+    return buff.trim() 
+}
+function add(char) {
+    buff = buff.slice(0, cursorX) + char+ buff.slice(cursorX);
+    cursorX+=char.length;//should be one, but its safe to make sure
+    shell.terminal.cursor.x+=char.length;
+}
+
+let bbuff = "";
 async function Enter() {
     const cmd = getCmd();
     shell.terminal.cursor.x = 0;
@@ -173,17 +200,24 @@ async function Enter() {
         }
         const v = await shell.run(cmd);
         await clear();
+        cursorX = 0;
         if (v === undefined) {
             shell.terminal.add(shell.localVars.workingDir + ">");
+            bbuff = shell.terminal.text();
+            buff = ""
             return;
         }
         shell.terminal.add(v);
         shell.terminal.cursor.x = 0;
         shell.terminal.cursor.y++;
         shell.terminal.add(shell.localVars.workingDir + ">");
+        bbuff = shell.terminal.text();
+        buff = ""
         return;
     } else {
         shell.terminal.add(shell.localVars.workingDir + ">");
+        bbuff = shell.terminal.text();
+        buff = ""
         return;
     }
 }
@@ -200,37 +234,43 @@ function keyPressed(keyCode, key) {
         case SUPER:
             break;
         case TAB:
-            Shell.terminal.add("    ");
+            add("    ");
             break;
         case LEFT_ARROW:
-            if (shell.terminal.cursor.x > shell.localVars.workingDir.length + 1) {
+            if (cursorX>1) {
                 shell.terminal.cursor.x--;
+                cursorX--;
             }
             break;
         case RIGHT_ARROW:
             shell.terminal.cursor.x++;
+            cursorX++;
         case DOWN_ARROW:
             break;
         case UP_ARROW:
             if (getCmd() === "" && last.length > 0) {
-                shell.terminal.add(last.pop());
+                buff = add(last.pop());
             }
             break;
         case ENTER:
             Enter();
             break;
         case BACKSPACE:
-            if (shell.terminal.cursor.x > shell.localVars.workingDir.length + 1) {
-                shell.terminal.delete();
+            if (cursorX>0) {
+                buff= buff.slice(0, cursorX) + buff.slice(cursorX + 1);
+                cursorX--;
+                shell.terminal.cursor.x--;
             }
             break;
         default:
-            shell.terminal.add(key);
+            add(key);
             break;
     }
+    shell.terminal.text(bbuff+buff);
 }
 
 Shell.keyPressed = (keyCode, key) => {
+    _key++;;
     if (!running) {
         keyPressed(keyCode, key);
         return;
@@ -276,7 +316,6 @@ function clear() {
             shell.mouseMoved = () => {};
             shell.onExit = () => {};
             shell.windowResized = () => {};
-            shell.terminal.color = "#ffffff";
             shell.gl.ready = false;
             running = false;
             r();
@@ -297,6 +336,7 @@ if (v) {
 }
 await clear();
 shell.terminal.add("/>");
+bbuff = shell.terminal.text();
 
 if (args[0]) {
     Shell.exit = true;

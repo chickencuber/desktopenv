@@ -1,179 +1,179 @@
 function fakeShell() {
-  const term = {
-    _text: "",
-    text(v) {
-      if (v === undefined) {
-        return this._text;
-      }
-      this._text = v;
-    },
-    scroll: {
-      get height() {
-        const temp = term._text.split("\n").length * 27.5 - Shell.size.height;
-        return temp < 0 ? 0 : temp;
-      },
-    },
-  };
-  const shell = {
-    in_emulator: true,
-    localVars: {
-      workingDir: "/",
-    },
-    reboot() {
-      Shell.reboot();
-    },
-    onExit: () => {},
-    exit: false,
-    keyPressed: () => {},
-    keyReleased: () => {},
-    mouseClicked: () => {},
-    mouseDragged: () => {},
-    mousePressed: () => {},
-    mouseReleased: () => {},
-    mouseMoved: () => {},
-    windowResized: () => {},
-    keyIsDown(...args) {
-      return Shell.keyIsDown(...args);
-    },
-    get keyIsPressed() {
-      return Shell.keyIsPressed;
-    },
-    get deltaTime() {
-      return Shell.deltaTime;
-    },
-    gl: {
-      canvas: false,
-      ready: false,
-      createGraphics: (...args) => {
-        return Shell.gl.createGraphics(...args);
-      },
-      mouse: {
-        get x() {
-          return Shell.gl.mouse.x;
+    const term = {
+        _text: "",
+        text(v) {
+            if (v === undefined) {
+                return this._text;
+            }
+            this._text = v;
         },
-        get y() {
-          return Shell.gl.mouse.y;
+        scroll: {
+            get height() {
+                const temp = term._text.split("\n").length * 27.5 - Shell.size.height;
+                return temp < 0 ? 0 : temp;
+            },
         },
-        get isDown() {
-          return Shell.gl.mouse.isDown;
+    };
+    const shell = {
+        supports_fansi: true,
+        localVars: {
+            workingDir: "/",
         },
-      },
-      resize() {
-        this.canvas.resizeCanvas(Shell.size.width, Shell.size.height);
-      },
-      draw: () => {},
-      setup: () => {},
-      get fonts() {
-        return Shell.gl.fonts;
-      },
-      new(renderer = P2D) {
-        this.canvas = Shell.gl.createGraphics(
-          Shell.size.width,
-          Shell.size.height,
-          renderer
-        );
-        shell.gl.setup();
-        shell.gl.ready = true;
-      },
-    },
-    size: {
-      get width() {
-        return Shell.size.width;
-      },
-      get height() {
-        return Shell.size.height;
-      },
-    },
-    terminal: {
-      text(v) {
-        if (v !== undefined) {
-          term.text(v);
-        }
-        return term.text();
-      },
-      color: "#ffffff", 
-      scroll: {
-        allow: false,
-        x: 0,
-        y: 0,
-      },
-      cursor: { x: 0, y: 0, style: "block" },
+        reboot() {
+            Shell.reboot();
+        },
+        onExit: () => {},
+        exit: false,
+        keyPressed: () => {},
+        keyReleased: () => {},
+        mouseClicked: () => {},
+        mouseDragged: () => {},
+        mousePressed: () => {},
+        mouseReleased: () => {},
+        mouseMoved: () => {},
+        windowResized: () => {},
+        keyIsDown(...args) {
+            return Shell.keyIsDown(...args);
+        },
+        get keyIsPressed() {
+            return Shell.keyIsPressed;
+        },
+        get deltaTime() {
+            return Shell.deltaTime;
+        },
+        gl: {
+            canvas: false,
+            ready: false,
+            createGraphics: (...args) => {
+                return Shell.gl.createGraphics(...args);
+            },
+            mouse: {
+                get x() {
+                    return Shell.gl.mouse.x;
+                },
+                get y() {
+                    return Shell.gl.mouse.y;
+                },
+                get isDown() {
+                    return Shell.gl.mouse.isDown;
+                },
+            },
+            resize() {
+                this.canvas.resizeCanvas(Shell.size.width, Shell.size.height);
+            },
+            draw: () => {},
+            setup: () => {},
+            get fonts() {
+                return Shell.gl.fonts;
+            },
+            new(renderer = P2D) {
+                this.canvas = Shell.gl.createGraphics(
+                    Shell.size.width,
+                    Shell.size.height,
+                    renderer
+                );
+                shell.gl.setup();
+                shell.gl.ready = true;
+            },
+        },
+        size: {
+            get width() {
+                return Shell.size.width;
+            },
+            get height() {
+                return Shell.size.height;
+            },
+        },
+        terminal: {
+            text(v) {
+                if (v !== undefined) {
+                    term.text(v);
+                }
+                return term.text();
+            },
+            scroll: {
+                allow: false,
+                x: 0,
+                y: 0,
+            },
+            cursor: { x: 0, y: 0, style: "block" },
 
-      getLine() {
-        return this.text().split("\n")[shell.terminal.cursor.y] || "";
-      },
+            getLine() {
+                return this.text().split("\n")[shell.terminal.cursor.y] || "";
+            },
 
-      clear() {
-        shell.terminal.cursor.x = 0;
-        shell.terminal.cursor.y = 0;
-        term.text("");
-      },
+            clear() {
+                shell.terminal.cursor.x = 0;
+                shell.terminal.cursor.y = 0;
+                term.text("");
+            },
 
-      delete() {
-        const cursor = shell.terminal.cursor;
-        const textArray = term
-          .text()
-          .split("\n")
-          .map((v) => v.split(""));
+            delete() {
+                const cursor = shell.terminal.cursor;
+                const textArray = term
+                    .text()
+                    .split("\n")
+                    .map((v) => v.split(""));
 
-        while (textArray.length <= cursor.y) {
-          textArray.push([]);
-        }
+                while (textArray.length <= cursor.y) {
+                    textArray.push([]);
+                }
 
-        if (cursor.x === 0) {
-          if (cursor.y > 0) {
-            const deletedText = textArray.splice(cursor.y, 1)[0];
-            shell.terminal.cursor.y--;
-            shell.terminal.cursor.x = textArray[cursor.y].join("").length;
+                if (cursor.x === 0) {
+                    if (cursor.y > 0) {
+                        const deletedText = textArray.splice(cursor.y, 1)[0];
+                        shell.terminal.cursor.y--;
+                        shell.terminal.cursor.x = textArray[cursor.y].join("").length;
 
-            textArray[cursor.y].push(...deletedText);
+                        textArray[cursor.y].push(...deletedText);
 
-            term.text(textArray.map((v) => v.join("")).join("\n"));
-          }
-          return;
-        }
+                        term.text(textArray.map((v) => v.join("")).join("\n"));
+                    }
+                    return;
+                }
 
-        textArray[cursor.y].splice(cursor.x - 1, 1);
+                textArray[cursor.y].splice(cursor.x - 1, 1);
 
-        term.text(textArray.map((v) => v.join("")).join("\n"));
+                term.text(textArray.map((v) => v.join("")).join("\n"));
 
-        cursor.x--;
-      },
+                cursor.x--;
+            },
 
-      add(str) {
-        const cursor = shell.terminal.cursor;
-        const textArray = term
-          .text()
-          .split("\n")
-          .map((v) => v.split(""));
+            add(str) {
+                const cursor = shell.terminal.cursor;
+                const textArray = term
+                    .text()
+                    .split("\n")
+                    .map((v) => v.split(""));
 
-        while (textArray.length <= cursor.y) {
-          textArray.push([]);
-        } 
+                while (textArray.length <= cursor.y) {
+                    textArray.push([]);
+                } 
 
-        textArray[cursor.y].splice(cursor.x, 0, ...str.split(""));
+                textArray[cursor.y].splice(cursor.x, 0, ...str.split(""));
 
-        term.text(textArray.map((v) => v.join("")).join("\n"));
-        cursor.x += str.length;
-        cursor.y += (str.match(/\n/g) || []).length;
+                term.text(textArray.map((v) => v.join("")).join("\n"));
+                str = str.split(/\x1b\[[0-9A-Fa-f]{6}m/).join("")
+                cursor.x += str.length;
+                cursor.y += (str.match(/\n/g) || []).length;
 
-        if (str.endsWith("\n")) {
-          cursor.x = 0;
-        }
+                if (str.split("\n").length > 1) {
+                    cursor.x = str.split("\n").at(-1).length;
+                }
 
-        shell.terminal.scroll.y = term.scroll.height;
-      },
-    },
-    update() {
-      Shell.update();
-    },
-    async run(command, _shell = shell) {
-      shell.name = command.split(" ")[0];
-      return await Shell.run(command, _shell);
-    },
-  };
+                shell.terminal.scroll.y = term.scroll.height;
+            },
+        },
+        update() {
+            Shell.update();
+        },
+        async run(command, _shell = shell) {
+            shell.name = command.split(" ")[0];
+            return await Shell.run(command, _shell);
+        },
+    };
 
-  return shell;
+    return shell;
 }
 
 return { fakeShell };
