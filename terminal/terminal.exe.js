@@ -63,7 +63,7 @@ function showCursor() {
                 Shell.gl.canvas.rect(
                     cursor.x * 13.2 - shell.terminal.scroll.x,
                     cursor.y * 29 - shell.terminal.scroll.y,
-                    2,
+                    4,
                     29
                 );
             }
