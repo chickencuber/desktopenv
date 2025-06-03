@@ -9,7 +9,7 @@ Shell.icon = loadImage(await getFile("~/../icons/terminal.png"))
 let command = getPath("/user/desktop/terminal/.startup.sh");
 
 function fixCursor() {
-    if (!shell.terminal.scroll.allow) return;
+    if (!shell.terminal.scroll.allow && running) return;
     if (getRect().right > shell.size.width) {
         shell.terminal.scroll.x += getRect().right - shell.size.width;
     } else if (getRect().left < 0) {

@@ -160,8 +160,6 @@ function fakeShell() {
                 if (str.split("\n").length > 1) {
                     cursor.x = str.split("\n").at(-1).length;
                 }
-
-                shell.terminal.scroll.y = term.scroll.height;
             },
         },
         update() {
