@@ -94,7 +94,7 @@ let lasty = 0;
 function renderText() {
     const text = shell.terminal.text();
     if (text !== lastRenderedText || lastx !== shell.terminal.scroll.x || lasty !== shell.terminal.scroll.y) {
-        textGraphics.background(0);
+        textGraphics.background(shell.terminal.background || 0);
         let y = 0;
         let x = 0;
         /**
