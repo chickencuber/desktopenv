@@ -47,7 +47,7 @@ function showCursor() {
                 Shell.gl.canvas.fill(0);
                 Shell.gl.canvas.text(
                     (() => {
-                        const txt = shell.terminal.text().split(/\x1b\[[0-9A-Fa-f]{6}m/).join("").split("\n");
+                        const txt = shell.terminal.text().split(/\x1b[fb]\[[0-9A-Fa-f]{6}m/).join("").split("\n");
                         if (txt[cursor.y]) {
                             return txt[cursor.y][cursor.x] || "";
                         }
@@ -68,6 +68,13 @@ function showCursor() {
                 );
             }
             break;
+        case "underscore": 
+            {
+                const x = cursor.x * 13.2 - shell.terminal.scroll.x;
+                const y = cursor.y * 29 - shell.terminal.scroll.y + 25;
+                Shell.gl.canvas.rect(x, y, 13.2, 4);
+            }
+            break
         case "none":
             break;
         default:
@@ -91,6 +98,8 @@ const textGraphics = Shell.gl.createGraphics(Shell.size.width, Shell.size.height
 let lastRenderedText = "";
 let lastx = 0;
 let lasty = 0;
+let background;//should get set at the start
+let forground;
 function renderText() {
     const text = shell.terminal.text();
     if (text !== lastRenderedText || lastx !== shell.terminal.scroll.x || lasty !== shell.terminal.scroll.y) {
@@ -100,19 +109,31 @@ function renderText() {
         /**
             * @type {string[]}
             */
-            const parts = text.split(/\x1b\[([0-9A-Fa-f]{6})m/);
+            const parts = text.split(/\x1b([fb])\[([0-9A-Fa-f]{6})m/);
         parts.unshift("ffffff");
-        for(let i = 1; i < parts.length; i+=2) {
+        parts.unshift("f");
+        parts.unshift("");
+        parts.unshift("000000")
+        parts.unshift("b")
+        for(let i = 2; i < parts.length; i+=3) {
             const text = parts[i];
             const color = "#"+parts[i-1];
-            textGraphics.fill(color);
-
+            const type = parts[i-2];
+            if(type === "f") {
+                forground = color;
+            } else {
+                background = color;
+            }
+            if(text === "") continue;
             text.split(/(\n)/).forEach(v => {
                 if(v === "\n") {
                     x = 0;
                     y += textGraphics.textLeading();
                     return
                 }
+                textGraphics.fill(background);
+                textGraphics.rect(x, y, textGraphics.textWidth(v), textGraphics.textLeading());
+                textGraphics.fill(forground);
                 textGraphics.text(
                     v,
                     -shell.terminal.scroll.x + x,
@@ -246,7 +267,7 @@ function keyPressed(keyCode, key) {
             add("    ");
             break;
         case LEFT_ARROW:
-            if (cursorX>1) {
+            if (cursorX>0) {
                 shell.terminal.cursor.x--;
                 cursorX--;
             }

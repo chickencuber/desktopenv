@@ -153,7 +153,7 @@ function fakeShell() {
                 textArray[cursor.y].splice(cursor.x, 0, ...str.split(""));
 
                 term.text(textArray.map((v) => v.join("")).join("\n"));
-                str = str.split(/\x1b\[[0-9A-Fa-f]{6}m/).join("")
+                str = str.split(/\x1b[fb]\[[0-9A-Fa-f]{6}m/).join("")
                 cursor.x += str.length;
                 cursor.y += (str.match(/\n/g) || []).length;
                 if (str.split("\n").length > 1) {
