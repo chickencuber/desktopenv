@@ -157,6 +157,9 @@ function fakeShell() {
                 while (textArray.length <= cursor.y) {
                     textArray.push([]);
                 } 
+                while(textArray[cursor.y].length <= cursor.x) {
+                    textArray[cursor.y].push(" ");
+                }
 
                 textArray[cursor.y].splice(cursor.x, 0, ...str.split(""));
 
