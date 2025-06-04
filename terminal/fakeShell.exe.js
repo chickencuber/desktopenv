@@ -93,11 +93,11 @@ function fakeShell() {
             },
             get width() {
                 const charWidth = 13.2;
-                return Math.floor(canvas.width / charWidth);
+                return Math.floor(Shell.size.width / charWidth);
             },
             get height() {
                 const charHeight = 29;
-                return Math.floor(canvas.height / charHeight);
+                return Math.floor(Shell.size.height / charHeight);
             },
             scroll: {
                 allow: false,
