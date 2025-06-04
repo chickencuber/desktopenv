@@ -96,7 +96,7 @@ function fakeShell() {
                 return Math.floor(Shell.size.width / charWidth);
             },
             get height() {
-                const charHeight = 29;
+                const charHeight = 27.5;
                 return Math.floor(Shell.size.height / charHeight);
             },
             scroll: {
