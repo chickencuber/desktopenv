@@ -146,28 +146,25 @@ function fakeShell() {
 
                 cursor.x--;
             },
-
             add(str) {
                 const cursor = shell.terminal.cursor;
-                const textArray = term
+                const arr = term
                     .text()
                     .split("\n")
                     .map((v) => v.split(""));
-
-                while (textArray.length <= cursor.y) {
-                    textArray.push([]);
-                } 
-                while(textArray[cursor.y].length <= cursor.x) {
-                    textArray[cursor.y].push(" ");
+                while (arr.length <= cursor.y) {
+                    arr.push([]);
                 }
-
-                textArray[cursor.y].splice(cursor.x, 0, ...str.split(""));
-
-                term.text(textArray.map((v) => v.join("")).join("\n"));
+                while(arr[cursor.y].length <= cursor.x) {
+                    arr[cursor.y].push(" ");
+                }
+                arr[cursor.y].splice(cursor.x, 0, str);
+                arr[cursor.y] = arr[cursor.y].map((v) => (v === undefined ? " " : v));
+                term.text(arr.map((v) => v.join("")).join("\n"));
                 str = str.split(/\x1b[fb]\[[0-9A-Fa-f]{6}m/).join("")
                 cursor.x += str.length;
                 cursor.y += (str.match(/\n/g) || []).length;
-                if (str.split("\n").length > 1) {
+                if (str.split("\n").length>1) {
                     cursor.x = str.split("\n").at(-1).length;
                 }
             },

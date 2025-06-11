@@ -4,7 +4,8 @@ let running = true;
 
 const shell = fakeShell();
 
-Shell.icon = loadImage(await getFile("~/../icons/terminal.png")) 
+const icon = loadImage(await getFile("~/../icons/terminal.png"));
+Shell.icon = icon;
 
 let command = getPath("/user/desktop/terminal/.startup.sh");
 
@@ -132,7 +133,7 @@ function renderText() {
                     return
                 }
                 textGraphics.fill(background);
-                textGraphics.rect(x, y, textGraphics.textWidth(v), textGraphics.textLeading());
+                textGraphics.rect(-shell.terminal.scroll.x + x, -shell.terminal.scroll.y + y, textGraphics.textWidth(v), textGraphics.textLeading());
                 textGraphics.fill(forground);
                 textGraphics.text(
                     v,
@@ -191,8 +192,10 @@ Shell.gl.draw = () => {
 
     if (running) {
         Shell.name = `shell: ${shell.name}`;
+        Shell.icon = shell.icon || icon;
     } else {
         Shell.name = `shell: ${shell.localVars.workingDir}>`;
+        Shell.icon = icon;
     }
 };
 
@@ -212,9 +215,13 @@ function getCmd() {
     return buff?.trim() || ""
 }
 function add(char) {
+    const len = char.length;
+    while(buff.length + char.length <= cursorX) {
+        char = " " + char;
+    }
     buff = buff.slice(0, cursorX) + char+ buff.slice(cursorX);
-    cursorX+=char.length;//should be one, but its safe to make sure
-    shell.terminal.cursor.x+=char.length;
+    cursorX+=len;//should be one, but its safe to make sure
+    shell.terminal.cursor.x+=len;
 }
 
 let bbuff = "";
@@ -233,7 +240,7 @@ async function Enter() {
         cursorX = 0;
         if (v === undefined) {
             shell.terminal.add(shell.localVars.workingDir + ">");
-            bbuff = shell.terminal.text();
+            bbuff = shell.terminal.text().trim();
             buff = ""
             return;
         }
@@ -241,12 +248,12 @@ async function Enter() {
         shell.terminal.cursor.x = 0;
         shell.terminal.cursor.y++;
         shell.terminal.add(shell.localVars.workingDir + ">");
-        bbuff = shell.terminal.text();
+        bbuff = shell.terminal.text().trim();
         buff = ""
         return;
     } else {
         shell.terminal.add(shell.localVars.workingDir + ">");
-        bbuff = shell.terminal.text();
+        bbuff = shell.terminal.text().trim();
         buff = ""
         return;
     }
@@ -293,6 +300,7 @@ function keyPressed(keyCode, key) {
             }
             break;
         default:
+            if(key.length > 1) return;
             add(key);
             break;
     }
@@ -366,7 +374,7 @@ if (v) {
 }
 await clear();
 shell.terminal.add("/>");
-bbuff = shell.terminal.text();
+bbuff = shell.terminal.text().trim();
 
 if (args[0]) {
     Shell.exit = true;

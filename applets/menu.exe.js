@@ -15,6 +15,7 @@ async function loadApps() {
     const p = await FS.getFromPath("/user/desktop/apps");
     const o = [];
     for(const f of p) {
+        if(!f.endsWith(".json")) continue;
         try {
             const j = JSON.parse(await FS.getFromPath(f))
             o.push(j);
@@ -75,7 +76,11 @@ async function update() {
         y += h.rect.height;
         h.on(Event.mousePressed, () => {
             Shell.toggleMenu();
-            Shell.runApp(app.exec);
+            if(app.terminal) {
+                Shell.runApp("/bin/desktop/terminal/terminal.exe " + app.exec);
+            } else {
+                Shell.runApp(app.exec);
+            }
         })
         scroll.child(h);
     }
