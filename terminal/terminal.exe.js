@@ -94,7 +94,7 @@ function getRect() {
     };
 }
 
-const textGraphics = Shell.gl.createGraphics(Shell.size.width, Shell.size.height);
+let textGraphics = Shell.gl.createGraphics(Shell.size.width, Shell.size.height);
 
 let lastRenderedText = "";
 let lastx = 0;
@@ -151,6 +151,7 @@ function renderText() {
 
 let _key = 0;
 Shell.gl.draw = () => {
+    if(!textGraphics) return;
     fixCursor();
     Shell.gl.canvas.background(0);
     Shell.gl.canvas.textAlign(LEFT, TOP);
@@ -365,7 +366,9 @@ function clear() {
 Shell.gl.new();
 
 Shell.onExit = () => {
-    textGraphics.remove();
+    const t = textGraphics;
+    textGraphics = null;
+    t.remove();
     shell.exit = true;
 };
 
