@@ -63,7 +63,7 @@ function showCursor() {
             {
                 Shell.gl.canvas.rect(
                     cursor.x * 13.2 - shell.terminal.scroll.x,
-                    cursor.y * 29 - shell.terminal.scroll.y,
+                    cursor.y * 27.5 - shell.terminal.scroll.y,
                     4,
                     29
                 );
@@ -72,7 +72,7 @@ function showCursor() {
         case "underscore": 
             {
                 const x = cursor.x * 13.2 - shell.terminal.scroll.x;
-                const y = cursor.y * 29 - shell.terminal.scroll.y + 25;
+                const y = cursor.y * 27.5 - shell.terminal.scroll.y + 25;
                 Shell.gl.canvas.rect(x, y, 13.2, 4);
             }
             break
