@@ -234,6 +234,7 @@ async function Enter() {
         running = true;
         if (cmd === ":exit:") {
             Shell.exit = true;
+            return;
         }
         const v = await shell.run(cmd);
         await clear();
