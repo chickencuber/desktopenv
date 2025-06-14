@@ -48,7 +48,7 @@ function showCursor() {
                 Shell.gl.canvas.fill(0);
                 Shell.gl.canvas.text(
                     (() => {
-                        const txt = shell.terminal.text().split(/\x1b[fb]\[[0-9A-Fa-f]{6}m/).join("").split("\n");
+                        const txt = shell.terminal.text().split(/\x1b[fbarg]\[[0-9A-Fa-f]{6}m/).join("").split("\n");
                         if (txt[cursor.y]) {
                             return txt[cursor.y][cursor.x] || "";
                         }
@@ -96,12 +96,20 @@ function getRect() {
 
 let textGraphics = Shell.gl.createGraphics(Shell.size.width, Shell.size.height);
 
+
+//f:forground
+//b:background
+//g:reset background
+//a:push to stack
+//r:pop from stack
 let lastRenderedText = "";
 let lastx = 0;
 let lasty = 0;
-let background;//should get set at the start
-let forground;
 function renderText() {
+    let background;//should get set at the start
+    let forground;
+    let render = false;
+    const stack = [];
     const text = shell.terminal.text();
     if (text !== lastRenderedText || lastx !== shell.terminal.scroll.x || lasty !== shell.terminal.scroll.y) {
         textGraphics.background(shell.terminal.background || 0);
@@ -110,20 +118,28 @@ function renderText() {
         /**
             * @type {string[]}
             */
-            const parts = text.split(/\x1b([fb])\[([0-9A-Fa-f]{6})m/);
+            const parts = text.split(/\x1b([fbarg])\[([0-9A-Fa-f]{6})m/);
         parts.unshift("ffffff");
         parts.unshift("f");
         parts.unshift("");
-        parts.unshift("000000")
-        parts.unshift("b")
-        for(let i = 2; i < parts.length; i+=3) {
+        for(let i = 1; i < parts.length; i+=3) {
             const text = parts[i];
             const color = "#"+parts[i-1];
             const type = parts[i-2];
             if(type === "f") {
                 forground = color;
-            } else {
+            } else if(type === "b") {
                 background = color;
+                render = true;
+            } else if(type === "g") {
+                render = false;
+            } else if(type === "a") {
+                stack.push({f: forground, b: background, g:render});
+            } else if(type==="r") {
+                const temp = stack.pop();
+                forground = temp.f;
+                background = temp.b;
+                render = temp.g;
             }
             if(text === "") continue;
             text.split(/(\n)/).forEach(v => {
@@ -357,6 +373,7 @@ function clear() {
             shell.onExit = () => {};
             shell.windowResized = () => {};
             shell.gl.ready = false;
+            shell.terminal.background = undefined;
             running = false;
             r();
         }, 100);
