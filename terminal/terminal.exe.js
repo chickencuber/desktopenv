@@ -121,7 +121,7 @@ function renderText() {
             const parts = text.split(/\x1b([fbarg])\[([0-9A-Fa-f]{6})m/);
         parts.unshift("ffffff");
         parts.unshift("f");
-        for(let i = 1; i < parts.length; i+=3) {
+        for(let i = 2; i < parts.length; i+=3) {
             const text = parts[i];
             const color = "#"+parts[i-1];
             const type = parts[i-2];
