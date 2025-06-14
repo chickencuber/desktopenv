@@ -147,9 +147,10 @@ function renderText() {
                     y += textGraphics.textLeading();
                     return
                 }
-                textGraphics.fill(background);
-                if(render)
-                textGraphics.rect(-shell.terminal.scroll.x + x, -shell.terminal.scroll.y + y, textGraphics.textWidth(v), textGraphics.textLeading());
+                if(render) {
+                    textGraphics.fill(background);
+                    textGraphics.rect(-shell.terminal.scroll.x + x, -shell.terminal.scroll.y + y, textGraphics.textWidth(v), textGraphics.textLeading());
+                }
                 textGraphics.fill(forground);
                 textGraphics.text(
                     v,
