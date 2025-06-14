@@ -121,7 +121,6 @@ function renderText() {
             const parts = text.split(/\x1b([fbarg])\[([0-9A-Fa-f]{6})m/);
         parts.unshift("ffffff");
         parts.unshift("f");
-        parts.unshift("");
         for(let i = 1; i < parts.length; i+=3) {
             const text = parts[i];
             const color = "#"+parts[i-1];
@@ -149,6 +148,7 @@ function renderText() {
                     return
                 }
                 textGraphics.fill(background);
+                if(render)
                 textGraphics.rect(-shell.terminal.scroll.x + x, -shell.terminal.scroll.y + y, textGraphics.textWidth(v), textGraphics.textLeading());
                 textGraphics.fill(forground);
                 textGraphics.text(
