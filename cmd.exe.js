@@ -38,6 +38,132 @@ const foreground = new Div({
     }
 });
 
+const Dialog = (function(){
+    /**
+        * @type {Array<DialogQueueItem>}
+        */
+        const queue = [];
+    let dialog = null;
+    function display() {
+        const {returnfn, menu} = queue[0];
+        dialog = new Div({
+            style: {
+                background: "#ffffff",
+                border_radius: 10,
+            }
+        });
+        const text = new Div({
+            text: menu.text,
+            style: {
+                border_width: 0,
+                size: 30,
+            },
+        });
+        text.rect.absolute = false;
+        dialog.child(text);
+        dialog.rect.width = 400;
+        dialog.rect.height = 400;
+        dialog.rect.x = vw(50) - vw(50, dialog);
+        dialog.rect.y = vh(50) - vh(50, dialog);
+        text.rect.x = vw(50, dialog) - vw(50, text);
+        dialog.on(Event.windowResized, () => {
+            dialog.rect.x = vw(50) - vw(50, dialog);
+            dialog.rect.y = vh(50) - vh(50, dialog);           
+            text.rect.x = vw(50, dialog) - vw(50, text);
+
+        });
+        foreground.child(dialog);
+        switch (menu.type) {
+            case "menu": {
+                const items = typeof menu.items === "object" && !Array.isArray(menu.items)
+                ? Object.entries(menu.items)
+                : menu.items.map(i => [i, i]);
+                let i = text.rect.y + text.rect.height + 5;
+                items.forEach(([id, display]) => {
+                    const option = new Button({text: display})
+                    option.rect.x = vw(50, dialog) - vw(50, option);
+                    option.rect.y = i;
+                    option.rect.absolute = false;
+                    dialog.child(option);
+                    i+=option.rect.height + 5;
+                    option.on(Event.mousePressed, ()=>returnfn(id))
+                });
+            }
+                break;
+            case "textInput": {
+                const inp = new TextInput();
+                inp.rect.width = 395;
+                inp.rect.y = text.rect.y + text.rect.height + 5;
+                inp.rect.absolute = false;
+                dialog.child(inp);
+                const ok = new Button({text: "OK"})
+                ok.rect.x = vw(50, dialog) - vw(50, ok);
+                ok.rect.y = inp.rect.y + inp.rect.height + 5;
+                ok.rect.absolute = false;
+                dialog.child(ok);
+                ok.on(Event.mousePressed, ()=>returnfn(inp.text))
+                const c = new Button({text: "CANCEL"})
+                c.rect.x = vw(50, dialog) - vw(50, c);
+                c.rect.y = ok.rect.y + ok.rect.height + 5;
+                c.rect.absolute = false;
+                dialog.child(c);
+                c.on(Event.mousePressed, ()=>returnfn(""))
+                inp.on(Event.keyPressed, (code) => {
+                    if(code === ENTER) {
+                        ok.hover = true;
+                        ok.mousePressed();
+                    }
+                });
+            }
+                break;
+        }
+    }
+    function next() {
+        dialog.remove();
+        dialog = null;
+        queue.shift();
+        if(queue.length > 0) {
+            display();
+        }
+    }
+    function menu(text, menu) {
+        return new Promise(r => {
+            queue.push({
+                returnfn: v => {r(v);next();},
+                menu: {
+                    text,
+                    type: "menu",
+                    items: menu, 
+                },
+            })
+            if(queue.length === 1) {
+                display();
+            }
+        });
+    }
+    async function alert(text) {
+        await menu(text, ["OK"]);//doesn't need to return anything
+    }
+    async function confirm(text) {
+        return ({true:true, false:false})[await (menu(text, {true: "Yes", false: "No"}))];
+    }
+    function prompt(text) {
+        return new Promise(r => {
+            queue.push({
+                returnfn: v => {r(v);next();},
+                menu: {
+                    text,
+                    type: "textInput",
+                },
+            })
+            if(queue.length === 1) {
+                display();
+            }
+        });
+    }
+    return {menu, alert, confirm, prompt}; 
+})();
+
 root.child(background, desktop, windows, foreground);
 
 let context = null;
@@ -129,6 +255,7 @@ function runApp(app) {
     }
     shell.shell.runApp = runApp;
     shell.shell.openContext = openContext;
+    shell.shell.Dialog = Dialog;
     shell.shell._functions = functions;
     shell.shell.run(app).then(() => {
         shells.splice(shells.indexOf(shell), 1);
@@ -738,6 +865,7 @@ function createApplet(app, ctx) {
             () => ctx.getRect().height,
         );
     applet.runApp = runApp;
+    applet.Dialog = Dialog;
     applet.openContext = openContext;
     ctx.on(Event.tick, (f = false) => {
         ctx.props.image = applet.gl.canvas;
