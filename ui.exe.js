@@ -111,9 +111,9 @@ class Element {
             this.children.push(c);
         }
     }
-    _render() {
-        this.render();
-        this.children.forEach((v) => v._render());
+    _render(canvas = Shell.gl.canvas) {
+        this.render(canvas);
+        this.children.forEach((v) => v._render(canvas));
     }
     tick(cc = false) {
         let c = false;
@@ -258,12 +258,19 @@ class Element {
     focus() {
         if (!this.focused) focus.push(this);
     }
+    unfocus() {
+        if(this.focused) focus.splice(focus.indexOf(this), 1);
+    }
     _default() {}
 }
 
 class RootElement extends Element {
-    render() {
-        Shell.gl.canvas.background(this.style.background ?? "#000000");
+    render(canvas = Shell.gl.canvas) {
+        canvas.background(this.style.background ?? "#000000");
+    }
+    remove() {
+        if (this.focused) focus.splice(focus.indexOf(this), 1);
+        this.removed();
     }
     _default() {
         this.rect = {
@@ -315,7 +322,7 @@ class Button extends Element {
             height: this.getHeight(this.text),
         };
     }
-    render() {
+    render(canvas = Shell.gl.canvas) {
         let { x, y, width, height } = this.getRect();
         const collide = this.hover;
         const {
@@ -330,16 +337,16 @@ class Button extends Element {
             margin_top = this.style.margin_top ?? 2,
             margin_left = this.style.margin_left ?? 2,
         } = collide ? this.style_hover : this.style;
-        Shell.gl.canvas.fill(background);
-        Shell.gl.canvas.stroke(border_color);
-        Shell.gl.canvas.strokeWeight(border_width);
-        Shell.gl.canvas.rect(x, y, width, height, border_radius);
-        Shell.gl.canvas.fill(color);
-        Shell.gl.canvas.strokeWeight(font_weight);
-        Shell.gl.canvas.textAlign(LEFT, TOP);
-        Shell.gl.canvas.textSize(size);
-        if (font) Shell.gl.canvas.textFont(font);
-        Shell.gl.canvas.text(this.text, x + margin_left, y + margin_top);
+        canvas.fill(background);
+        canvas.stroke(border_color);
+        canvas.strokeWeight(border_width);
+        canvas.rect(x, y, width, height, border_radius);
+        canvas.fill(color);
+        canvas.strokeWeight(font_weight);
+        canvas.textAlign(LEFT, TOP);
+        canvas.textSize(size);
+        if (font) canvas.textFont(font);
+        canvas.text(this.text, x + margin_left, y + margin_top);
     }
 }
 
@@ -377,7 +384,7 @@ class Div extends Element {
             height: this.getHeight(this.text),
         };
     }
-    render() {
+    render(canvas = Shell.gl.canvas) {
         let { x, y, width, height } = this.getRect();
 
         const collide = this.hover;
@@ -393,16 +400,182 @@ class Div extends Element {
             margin_top = this.style.margin_top ?? 2,
             margin_left = this.style.margin_left ?? 2,
         } = collide ? this.style_hover : this.style;
-        Shell.gl.canvas.fill(background);
-        Shell.gl.canvas.stroke(border_color);
-        Shell.gl.canvas.strokeWeight(border_width);
-        Shell.gl.canvas.rect(x, y, width, height, border_radius);
-        Shell.gl.canvas.fill(color);
+        canvas.fill(background);
+        canvas.stroke(border_color);
+        canvas.strokeWeight(border_width);
+        canvas.rect(x, y, width, height, border_radius);
+        canvas.fill(color);
+        canvas.strokeWeight(font_weight);
+        canvas.textAlign(LEFT, TOP);
+        canvas.textSize(size);
+        if (font) canvas.textFont(font);
+        canvas.text(this.text, x + margin_left, y + margin_top);
+    }
+}
+
+class TextInput extends Element{
+    _default() {
+        this.rect = {
+            autosize: false,
+            absolute: true,
+            x: 0,
+            y: 0,
+            width: 400,
+            height: this.getHeight(this.text),
+        };
+    }
+    getHeight(text) {
+        const collide = this.hover;
+        const {
+            size = this.style.size ?? 20,
+            margin_top = this.style.margin_top ?? 2,
+        } = collide ? this.style_hover : this.style;
+        return size * text.split("\n").length + margin_top * 2;
+    }
+    render(canvas = Shell.gl.canvas) {
+        if(!this.canvas) return;
+        let { x, y, width, height } = this.getRect();
+        const collide = this.hover;
+        if (this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.resizeCanvas(width, height);
+        }
+        const {
+            border_width = this.style.border_width ?? 2,
+            border_color = this.style.border_color ?? "#000000",
+            background = this.style.background ?? "#ffffff",
+            size = this.style.size ?? 20,
+            font_weight = this.style.font_weight ?? 0,
+            font = this.style.font ?? default_font,
+            margin_left = this.style.margin_left ?? 2,
+            margin_top = this.style.margin_top ?? 2,
+            color = this.style.color ?? "#000000",
+            cursor_color = this.style.cursor_color ?? "#000000",
+            cursor_width = this.style.cursor_width ?? 2,
+        } = collide ? this.style_hover : this.style
+        this.canvas.background(background);
+        canvas.fill(border_color);
+        if (border_width !== 0)
+            canvas.rect(
+                x,
+                y,
+                width + border_width * 2,
+                height + border_width * 2,
+            );
+        this.canvas.fill(color);
+        this.canvas.strokeWeight(font_weight);
+        this.canvas.textAlign(LEFT, TOP);
+        this.canvas.textSize(size);
+        if (font) this.canvas.textFont(font);
+        this.ticks++;
+        if(this.keys>0) {
+            this.keys--;
+            this.show_cursor = true;
+        } else if(this.ticks % Math.floor(480 / Shell.deltaTime) === 0) {
+            this.show_cursor = !this.show_cursor;
+            this.ticks = 0;
+        }
+        if(this.focused&&this.show_cursor) {
+            this.canvas.fill(cursor_color);
+            const p = this.canvas.textWidth(this.text.slice(0, this.cursor_index)) + margin_left;
+            this.canvas.rect(p, 0, cursor_width, height)
+        }
+        this.canvas.text(this.text, margin_left, margin_top);
+
+        canvas.image(this.canvas, x+border_width, y+border_width, width, height)
+    } 
+    getWidth(text) {
+        if (text === "") return 0;
+        const collide = this.hover;
+        const {
+            size = this.style.size ?? 20,
+            font_weight = this.style.font_weight ?? 0,
+            font = this.style.font ?? default_font,
+            margin_left = this.style.margin_left ?? 2,
+        } = collide ? this.style_hover : this.style;
         Shell.gl.canvas.strokeWeight(font_weight);
         Shell.gl.canvas.textAlign(LEFT, TOP);
         Shell.gl.canvas.textSize(size);
         if (font) Shell.gl.canvas.textFont(font);
-        Shell.gl.canvas.text(this.text, x + margin_left, y + margin_top);
+        return Shell.gl.canvas.textWidth(text) + margin_left;
+    }
+    _start() {
+        let {width, height } = this.getRect();
+        this.canvas = Shell.gl.createGraphics(width, height);
+        this.cursor_index = 0;
+        this.ticks = 0;
+        this.keys = 0;
+        this.show_cursor = true;
+        this.on(Event.keyPressed, (code, key) => {
+            this.keys++;
+            if (key.length === 1) {
+                this.text = 
+                    this.text.slice(0, this.cursor_index) + 
+                    key + 
+                    this.text.slice(this.cursor_index);
+                this.cursor_index++;
+            }
+            switch (code) {
+                case ESCAPE:
+                    this.unfocus();
+                    break;
+                case LEFT_ARROW:
+                    this.cursor_index--;
+                    if(this.cursor_index < 0) this.cursor_index = 0;
+                    break
+                case RIGHT_ARROW:
+                    this.cursor_index++;
+                    if(this.cursor_index > this.text.length) this.cursor_index = this.text.length;
+                    break
+                case 36://HOME
+                    this.cursor_index = 0;
+                    break;
+                case 35: //END
+                    this.cursor_index = this.text.length;
+                    break;
+                case BACKSPACE:
+                    if(this.cursor_index === 0) break;
+                    this.text = this.text.slice(0, this.cursor_index-1) + this.text.slice(this.cursor_index);
+                    this.cursor_index--;
+                    if(this.cursor_index < 0) this.cursor_index = 0;
+                    break;
+            }
+        });
+        this.on(Event.removed, () => {
+            this.canvas.remove();
+            this.canvas = null;
+        });
+        this.on(Event.mousePressed, () => {
+            this.cursor_index = this.cursor_pos();
+            this.keys++;
+        });
+        //TODO highlighting
+        //TODO handle scrolling
+    }
+    cursor_pos() {
+        if(this.text.length === 0) return 0;
+        const mx = Shell.gl.mouse.x;
+        const {x} = this.getRect();
+        const {
+            border_width = this.style.border_width ?? 2,
+        } = this.hover ? this.style_hover : this.style
+        if(mx>x+border_width+this.getWidth(this.text)) {
+            return this.text.length;
+        }
+        let l = 0;
+        let n = 0;
+        for(let i = 0; i < this.text.length; i++) {
+            const w = x+border_width+this.getWidth(this.text.slice(0, i));
+            if(mx>w) {
+                n=i;
+                l = w;
+            } else {
+                const distL = Math.abs(mx - l);
+                const distW = Math.abs(mx - w);
+                n = distW < distL ? i : n;
+                break;
+            }
+        }
+        return n;
     }
 }
 
@@ -417,23 +590,23 @@ class Img extends Element {
             height: 400,
         };
     }
-    render() {
+    render(canvas = Shell.gl.canvas) {
         let { x, y, width, height } = this.getRect();
         const collide = this.hover;
         const {
             border_width = this.style.border_width ?? 2,
             border_color = this.style.border_color ?? "#000000",
         } = collide ? this.style_hover : this.style;
-        Shell.gl.canvas.fill(border_color);
+        canvas.fill(border_color);
         if (border_width !== 0)
-            Shell.gl.canvas.rect(
+            canvas.rect(
                 x,
                 y,
                 width + border_width * 2,
                 height + border_width * 2,
             );
         if (this.props.image) {
-            Shell.gl.canvas.image(
+            canvas.image(
                 this.props.image,
                 x + border_width,
                 y + border_width,
@@ -504,4 +677,6 @@ return {
     vh,
     Event,
     Img,
+    TextInput,
+    default_font,
 };

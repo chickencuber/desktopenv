@@ -7,6 +7,7 @@ const {
     vh,
     Event,
     Img,
+    TextInput,
 } = await use("~/ui.exe");
 
 const _default = loadImage(await getFile("~/icons/default.png"))
@@ -878,6 +879,7 @@ function clean() {
     for(const applet of applets) {
         applet.exit = true;
     }
+    root.remove();
 }
 
 root.on(Event.windowResized, () => {
@@ -889,6 +891,7 @@ root.on(Event.windowResized, () => {
     time.rect.x = vw(100) - time.rect.width - button.rect.x - 5
     taskbar.rect.width = vw(100) - (taskbar.rect.x + button.rect.width) - time.rect.width;
 });
+
 
 await run(r => {
     power.on(Event.mousePressed, (mouse) => {

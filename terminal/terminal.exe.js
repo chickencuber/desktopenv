@@ -201,8 +201,10 @@ Shell.gl.draw = () => {
             _key--;
             show_cursor = true;
         } else {
-            if (frame % Math.floor(480 / Shell.deltaTime) === 0)
+            if (frame % Math.floor(480 / Shell.deltaTime) === 0) {
                 show_cursor = !show_cursor;
+                frame = 0;
+            }
         }
         frame++;
         if (show_cursor) showCursor();
