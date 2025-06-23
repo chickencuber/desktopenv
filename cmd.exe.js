@@ -61,18 +61,11 @@ const Dialog = (function(){
         });
         text.rect.absolute = false;
         dialog.child(text);
-        dialog.rect.width = 400;
-        dialog.rect.height = 400;
-        dialog.rect.x = vw(50) - vw(50, dialog);
-        dialog.rect.y = vh(50) - vh(50, dialog);
-        text.rect.x = vw(50, dialog) - vw(50, text);
-        dialog.on(Event.windowResized, () => {
-            dialog.rect.x = vw(50) - vw(50, dialog);
-            dialog.rect.y = vh(50) - vh(50, dialog);           
-            text.rect.x = vw(50, dialog) - vw(50, text);
-
-        });
         foreground.child(dialog);
+        const tc = -2;
+        const change = 20;
+        let width = Math.max(text.rect.width + change, 100);
+        let height = 0;
         switch (menu.type) {
             case "menu": {
                 const items = typeof menu.items === "object" && !Array.isArray(menu.items)
@@ -80,32 +73,51 @@ const Dialog = (function(){
                 : menu.items.map(i => [i, i]);
                 let i = text.rect.y + text.rect.height + 5;
                 items.forEach(([id, display]) => {
-                    const option = new Button({text: display})
-                    option.rect.x = vw(50, dialog) - vw(50, option);
+                    const option = new Button()
+                    const t = new Div({text: display, style: {border_width: 0}});
+                    t.rect.absolute = false;
+                    option.child(t)
                     option.rect.y = i;
                     option.rect.absolute = false;
                     dialog.child(option);
                     i+=option.rect.height + 5;
                     option.on(Event.mousePressed, ()=>returnfn(id))
+                    height = i;
+                    if(option.rect.width + change > width) {
+                        width = option.rect.width + change;
+                    }
                 });
             }
                 break;
             case "textInput": {
                 const inp = new TextInput();
-                inp.rect.width = 395;
                 inp.rect.y = text.rect.y + text.rect.height + 5;
                 inp.rect.absolute = false;
+                if(400 + (change-tc) > width) {
+                        width = 400 + (change-tc);
+                }
                 dialog.child(inp);
-                const ok = new Button({text: "OK"})
-                ok.rect.x = vw(50, dialog) - vw(50, ok);
-                ok.rect.y = inp.rect.y + inp.rect.height + 5;
+                const ok = new Button()
+                const okt = new Div({text: "OK", style:{border_width: 0}});
+                okt.rect.absolute = false;
+                ok.child(okt)
+                ok.rect.y = inp.rect.y + inp.rect.height + 7;
                 ok.rect.absolute = false;
+                if(ok.rect.width + change > width) {
+                        width = ok.rect.width + change;
+                    }
                 dialog.child(ok);
                 ok.on(Event.mousePressed, ()=>returnfn(inp.text))
-                const c = new Button({text: "CANCEL"})
-                c.rect.x = vw(50, dialog) - vw(50, c);
+                const c = new Button();
+                const ct = new Div({text: "CANCEL", style: {border_width: 0}});
+                ct.rect.absolute = false;
+                c.child(ct)
                 c.rect.y = ok.rect.y + ok.rect.height + 5;
+                height = c.rect.y + c.rect.height + 5;
                 c.rect.absolute = false;
+                if(c.rect.width + change > width) {
+                    width = c.rect.width + change;
+                }
                 dialog.child(c);
                 c.on(Event.mousePressed, ()=>returnfn(""))
                 inp.on(Event.keyPressed, (code) => {
@@ -117,6 +129,26 @@ const Dialog = (function(){
             }
                 break;
         }
+        dialog.rect.width = width;
+        dialog.rect.height = height;
+        dialog.rect.x = vw(50) - vw(50, dialog);
+        dialog.rect.y = vh(50) - vh(50, dialog);
+        dialog.children.forEach(v => {
+            if(v === text) return;
+            v.rect.width = width-change;
+            v.rect.x = vw(50, dialog) - vw(50, v);
+            if(v instanceof TextInput) {
+                v.rect.width = width-(change-tc);
+                v.rect.x = (vw(50, dialog) - vw(50, v)) + tc;
+                return;
+            }
+            v.children[0].rect.x = vw(50, v) - vw(50, v.children[0]);
+        })
+        text.rect.x = vw(50, dialog) - vw(50, text);
+        dialog.on(Event.windowResized, () => {
+            dialog.rect.x = vw(50) - vw(50, dialog);
+            dialog.rect.y = vh(50) - vh(50, dialog);           
+        });
     }
     function next() {
         dialog.remove();
@@ -165,6 +197,7 @@ const Dialog = (function(){
 })();
 
 root.child(background, desktop, windows, foreground);
+
 
 let context = null;
 let setContext = false;
