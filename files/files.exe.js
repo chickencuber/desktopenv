@@ -32,13 +32,13 @@ root.on(Event.mousePressed, (button) => {
             async ["Create File"](){
                 const name = await Shell.Dialog.prompt("name of file");
                 if(name.trim() === "") return;
-                Shell.runApp(`touch ${name}`);
+                Shell.runApp(`touch ${getPath(Shell.localVars.workingDir + "/" + name)}`);
                 cd(".");
             },
             async ["Create Folder"](){
                 const name = await Shell.Dialog.prompt("name of folder");
                 if(name.trim() === "") return;
-                Shell.runApp(`mkdir ${name}`);
+                Shell.runApp(`mkdir ${getPath(Shell.localVars.workingDir + "/" + name)}`)
                 cd(".");
             }
         });
@@ -60,12 +60,7 @@ async function addButton(dir) {
     o.rect.y = y;
     o.rect.autosize = false;
     o.rect.width = vw(100);
-    let _dir = Shell.localVars.workingDir;
-    if (dir.startsWith("/")) {
-        dir = "/" + FS.normalizePath(dir).join("/");
-    } else {
-        dir = "/" + FS.normalizePath(_dir + "/" + dir).join("/");
-    }
+    dir = getPath(dir); 
     const type = (await FS.getMetaFromPath(dir)).type;
     if(type === "dir") {
         o.text += "/";
@@ -98,6 +93,7 @@ async function addButton(dir) {
                     break
             }
         } else if (button === RIGHT) {
+            if(o.text === "../") return;
             let options = {
                 async Rename() {
                     const name = FS.normalizePath(dir)
