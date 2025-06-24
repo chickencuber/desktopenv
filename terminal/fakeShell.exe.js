@@ -172,9 +172,9 @@ function fakeShell() {
         update() {
             Shell.update();
         },
-        async run(command, _shell = shell) {
+        async run(command, _shell = shell, ...args) {
             shell.name = command.split(" ")[0];
-            return await Shell.run(command, _shell);
+            return await Shell.run(command, _shell, ...args);
         },
     };
 

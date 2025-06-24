@@ -33,7 +33,7 @@ const scroll = new Div({
 root.child(scroll);
 
 async function update() {
-    scroll.children = [];
+    [...scroll.children].forEach(v => v.remove());
     const apps = await loadApps();
     let y = 5;
     for(const app of apps) {
@@ -88,6 +88,20 @@ async function update() {
 
 let count = 0;
 update();
+
+root.on(Event.mousePressed, (button) => {
+    if(scroll.children.some(v => v.hover)) {
+        return;
+    }
+    if(button === RIGHT) {
+        Shell.openContext({
+            Refresh() {
+                count = 0;
+                update();
+            }
+        })
+    }
+})
 
 root.on(Event.tick, () => {
     count ++;

@@ -13,6 +13,7 @@ const Event = {
     windowResized: "windowResized",
     mouseWheel: "mouseWheel",
     removed: "removed",
+    Exit: "Exit",
     tick: "tick",
 };
 
@@ -49,6 +50,7 @@ class Element {
         this._mouseWheel = [];
         this._removed = [];
         this._tick = [];
+        this._Exit = [];
         this.parent = null;
         this.hover = false;
         this._default();
@@ -89,6 +91,12 @@ class Element {
         } catch (e) {
             throw new Error("not defined");
         }
+    }
+    exit() {
+        for (let i = this.children.length - 1; i >= 0; i--) {
+            this.children[i].exit();
+        }
+        this._Exit.forEach((v) => v());
     }
     getRect() {
         const parent = this.parent;
@@ -579,6 +587,119 @@ class TextInput extends Element{
     }
 }
 
+class ScrollableVert extends Element {
+    _default() {
+        this.rect = {
+            autosize: false,
+            absolute: true,
+            x: 0,
+            y: 0,
+            width: 400,
+            height: 400,
+        };
+    }
+    clampScroll() {
+        if (this.children.length === 0) {
+            this._scroll = 0;
+            return;
+        }
+
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        for (const child of this.children) {
+            const top = child.rect.y;
+            const bottom = child.rect.y + child.rect.height;
+
+            if (top < minY) minY = top;
+            if (bottom > maxY) maxY = bottom;
+        }
+
+        const viewHeight = this.rect.height;
+
+        const minScroll = Math.min(0, minY); // allows scrolling above y=0 if needed
+        const maxScroll = Math.max(0, maxY - viewHeight);
+
+        this._scroll = Math.max(minScroll, Math.min(this._scroll, maxScroll));
+    }
+    get scroll() {
+        this.clampScroll();
+        return this._scroll;
+    }
+    set scroll(v) {
+        this._scroll = v;
+        this.clampScroll();
+    }
+    render(canvas) {
+        let { x, y, width, height } = this.getRect();
+        const collide = this.hover;
+        const {
+            background = this.style.background ?? "#ffffff",
+            border_width = this.style.border_width ?? 2,
+            border_color = this.style.border_color ?? "#000000"
+        } = collide ? this.style_hover : this.style;
+        this.canvas.background(background);
+        canvas.fill(border_color);
+        if (border_width !== 0)
+            canvas.rect(
+                x,
+                y,
+                width + border_width * 2,
+                height + border_width * 2,
+            );
+    }
+    //@override
+    _render(canvas = Shell.gl.canvas) {
+        if(!this.canvas) return;
+        let { x, y, width, height } = this.getRect();
+        const collide = this.hover;
+        const {
+            border_width = this.style.border_width ?? 2,
+        } = collide ? this.style_hover : this.style;
+
+        this.canvas.resizeCanvas(width, height);
+        this.render(canvas);
+        this.canvas.push();
+        this.canvas.translate(-x, -y);
+        this.children.forEach((v) => v._render(this.canvas));
+        this.canvas.pop();
+        canvas.image(this.canvas, x+border_width, y+border_width, width, height)
+    }
+    child(...children) {
+        super.child(...children);
+        const self = this;
+        for(const child of children) {
+            child.parent = {
+                getRect() {
+                    const r = self.getRect() 
+                    r.y -= self.scroll;
+                    return r;
+                },
+                children: self.children,
+            }
+        }
+
+    }
+    _start() {
+        let {width, height } = this.getRect();
+        this.canvas = Shell.gl.createGraphics(width, height);
+        this._scroll = 0;
+        this.on(Event.removed, () => {
+            this.canvas.remove();
+            this.canvas = null;
+        });
+        //y is all we care about
+        this.on(Event.mouseWheel, (x, y) => {
+            this.scroll += y;
+        });
+        this.on(Event.tick, () => {
+            this.clampScroll();
+        })
+    }
+}
+
+
+
 class Img extends Element {
     _default() {
         this.rect = {
@@ -668,6 +789,10 @@ function vh(a, elt = root) {
     return (elt.rect.height ?? 0) * (parseFloat(a) / 100);
 }
 
+Shell.onExit = () => {
+    root.exit();
+    root.remove();
+};
 return {
     Element,
     Button,
@@ -679,4 +804,5 @@ return {
     Img,
     TextInput,
     default_font,
-};
+    ScrollableVert,
+} 

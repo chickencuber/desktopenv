@@ -206,6 +206,7 @@ let setContext = false;
     * @param {Record<string, () => void>} obj 
     */
 function openContext(obj) {
+    if(context) return;
     context = new Div({
         style: {
             border_width: 1,
@@ -551,28 +552,28 @@ function createWindow(shell) {
     let pw = 400;
     let ph = 400;
     img.on(Event.keyPressed, (...args) => {
-        shell.shell.keyPressed(...args);
+        shell.shell.keyPressed?.(...args);
     });
     img.on(Event.keyReleased, (...args) => {
-        shell.shell.keyReleased(...args);
+        shell.shell.keyReleased?.(...args);
     });
     img.on(Event.mouseClicked, (...args) => {
-        shell.shell.mouseClicked(...args);
+        shell.shell.mouseClicked?.(...args);
     });
     img.on(Event.mouseDragged, (...args) => {
-        shell.shell.mouseDragged(...args);
+        shell.shell.mouseDragged?.(...args);
     });
     img.on(Event.mousePressed, (...args) => {
-        shell.shell.mousePressed(...args);
+        shell.shell.mousePressed?.(...args);
     });
     img.on(Event.mouseReleased, (...args) => {
-        shell.shell.mouseReleased(...args);
+        shell.shell.mouseReleased?.(...args);
     });
     img.on(Event.mouseMoved, (...args) => {
-        shell.shell.mouseMoved(...args);
+        shell.shell.mouseMoved?.(...args);
     });
     img.on(Event.mouseWheel, (...args) => {
-        shell.shell.mouseWheel(...args);
+        shell.shell.mouseWheel?.(...args);
     });
     img.on(Event.tick, (t = false) => {
         if(!shells.includes(shell)) {
@@ -742,6 +743,7 @@ function createWindow(shell) {
     }
 
     window.on(Event.mousePressed, (mouse) => {
+        if(img.hover) return;
         if(mouse===RIGHT) {
             openContext({
                 "Minimize": () => minimize.active(Event.mousePressed, LEFT),
@@ -1040,8 +1042,10 @@ function clean() {
     for(const applet of applets) {
         applet.exit = true;
     }
-    root.remove();
 }
+root.on(Event.Exit, () => {
+    clean()
+});
 
 root.on(Event.windowResized, () => {
     background.rect.width = vw(100);
@@ -1053,11 +1057,9 @@ root.on(Event.windowResized, () => {
     taskbar.rect.width = vw(100) - (taskbar.rect.x + button.rect.width) - time.rect.width;
 });
 
-
 await run(r => {
     power.on(Event.mousePressed, (mouse) => {
     if(mouse === RIGHT) return;
-        clean()
         r();
     })
 });

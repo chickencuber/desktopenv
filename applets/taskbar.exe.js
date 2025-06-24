@@ -12,7 +12,7 @@ const _default = loadImage(await getFile("~/../icons/default.png"))
 root.style.background = "#252d35";
 
 function onChange(w) {
-    root.children = [];
+    [...root.children].forEach(v => v.remove());
     let x = 0;
     for(const win of w) {
         const button = new Img({

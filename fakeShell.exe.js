@@ -154,8 +154,8 @@ function fakeShell(x, y, width, height) {
         update() {
             Shell.update();
         },
-        async run(command, _shell = shell) {
-            return await Shell.run(command, _shell);
+        run(command, _shell = shell, ...args) {
+            return Shell.run(command, _shell, ...args);
         },
     };
 

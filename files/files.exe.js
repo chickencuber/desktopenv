@@ -1,12 +1,180 @@
-
 if(!Shell.in_desktop) return "must be launched in a desktop enviroment";
 const icon = loadImage(await getFile("~/../icons/files.png"));
 Shell.icon = icon;
 Shell.name = "Files";
-const { Event, Button, Div, Element, root, vw, vh, Img } = await use(
+const { Event, Button, Div, Element, root, vw, vh, Img, ScrollableVert } = await use(
     "~/../ui.exe"
 );
 
-root.child(new Div({text:"in development", style:{color:"#ffffff"}}))
+
+const t = new Div({
+    style: {
+        background: "white" 
+    }
+});
+
+
+t.rect.width = vw(100);
+t.rect.autosize = false;
+t.on(Event.tick, () => {
+    t.text = Shell.localVars.workingDir
+})
+
+
+const scroll = new ScrollableVert();
+scroll.rect.y = vh(100, t) + 5;
+scroll.rect.height = vh(100) - vh(100, t) - 5;
+scroll.rect.width = vw(100);
+root.on(Event.mousePressed, (button) => {
+    if(scroll.children.some(v => v.hover)) return;
+    if(button===RIGHT) {
+        Shell.openContext({
+            async ["Create File"](){
+                const name = await Shell.Dialog.prompt("name of file");
+                if(name.trim() === "") return;
+                Shell.runApp(`touch ${name}`);
+                cd(".");
+            },
+            async ["Create Folder"](){
+                const name = await Shell.Dialog.prompt("name of folder");
+                if(name.trim() === "") return;
+                Shell.runApp(`mkdir ${name}`);
+                cd(".");
+            }
+        });
+    }
+})
+root.on(Event.windowResized, () => {
+    t.rect.width = vw(100);
+    scroll.rect.height = vh(100) - vh(100, t) - 5;
+    scroll.rect.width = vw(100);   
+    scroll.children.forEach(v => v.rect.width = vw(100))
+});
+root.child(t, scroll);
+
+let y = 0;
+
+
+async function addButton(dir) {
+    const o = new Button({text: dir});
+    o.rect.y = y;
+    o.rect.autosize = false;
+    o.rect.width = vw(100);
+    let _dir = Shell.localVars.workingDir;
+    if (dir.startsWith("/")) {
+        dir = "/" + FS.normalizePath(dir).join("/");
+    } else {
+        dir = "/" + FS.normalizePath(_dir + "/" + dir).join("/");
+    }
+    const type = (await FS.getMetaFromPath(dir)).type;
+    if(type === "dir") {
+        o.text += "/";
+    }
+    o.rect.absolute = false;
+
+
+    o.on(Event.mousePressed, (button) => {
+        if(button === LEFT) {
+            switch(type) {
+                case "file": {
+                    if(dir.endsWith(".exe") | dir.endsWith(".sh")) {
+                        //run in terminal by default
+                        Shell.runApp("/bin/desktop/terminal/terminal.exe " + dir);
+                    } else if(
+                        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"].some((v) =>
+                            dir.endsWith(v.toLowerCase())
+                        )
+                    ) {
+                        Shell.runApp("/bin/desktop/image.exe " + dir)
+                    } else{
+                        //open in nano by default
+                        Shell.runApp("/bin/desktop/terminal/terminal.exe /user/desktop/files/openwith.sh " + dir)
+                    }
+                }
+                    break
+                case "dir": {
+                    cd(dir); 
+                }
+                    break
+            }
+        } else if (button === RIGHT) {
+            let options = {
+                async Rename() {
+                    const name = FS.normalizePath(dir)
+                    const n = Shell.Dialog.prompt("rename file");
+                    if(n.trim() === "") {
+                        return;
+                    }
+                    name[name.length - 1] = n;
+                    Shell.runApp(`mv ${dir} ${"/" + name.join("/")}`);
+                    cd(".");
+                },
+                async Delete() {
+                    const t = await Shell.Dialog.confirm("are you sure?");
+                    if(t) {
+                        Shell.runApp(`rm ${dir}`);
+                    }
+                    cd(".")
+                }
+            }
+            switch(type) {
+                case "file": {
+                    options["Open With Editor"] = () => {
+                        Shell.runApp("/bin/desktop/terminal/terminal.exe /user/desktop/files/openwith.sh " + dir)
+                    }
+                    if(dir.endsWith(".exe") | dir.endsWith(".sh")) {
+                        options = {...options,
+                            "Run In Terminal"() {
+                                Shell.runApp("/bin/desktop/terminal/terminal.exe " + dir);                               
+                            },
+                            "Run in GUI"() {
+                                Shell.runApp(dir);
+                            },
+                        }
+                    }else if(
+                        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"].some((v) =>
+                            dir.endsWith(v.toLowerCase())
+                        )
+                    ) {
+                        option["Open Image"] = function() {
+                            Shell.runApp("/bin/desktop/image.exe " + dir)
+                        }
+                    }
+                }
+                    break
+                case "dir": {
+                    options["Open dir"] = function () {
+                        cd(dir); 
+                    }
+                }
+                    break;
+            }
+            Shell.openContext(options);
+        }
+    })
+    y += vh(100, o) + 5;
+    scroll.child(o);
+}
+
+async function redraw() {
+    [...scroll.children].forEach(v => v.remove());
+    const dirs = (await FS.getFromPath(Shell.localVars.workingDir));
+    y = 0;
+    if(Shell.localVars.workingDir !== "/")
+        await addButton("..");
+    for(let dir of dirs) {
+        dir = "."+dir.slice(dir.lastIndexOf("/"));
+        await addButton(dir);
+    }
+}
+
+async function cd(dir) {
+    await Shell.run(`cd ${dir}`, Shell, false);
+    await redraw();
+}
+
+root.style.background = "#ffffff";
+
+cd("/");
 
 await run();

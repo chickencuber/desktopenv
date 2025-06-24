@@ -390,6 +390,8 @@ Shell.onExit = () => {
     textGraphics = null;
     t.remove();
     shell.exit = true;
+    if(shell.gl.canvas !== false)
+        shell.gl.canvas.remove();
 };
 
 const v = await shell.run(command);

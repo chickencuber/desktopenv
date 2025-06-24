@@ -285,10 +285,10 @@ Number.prototype.clamp = function (min, max) {
 };
 
 
-Shell.onExit = async () => {
+root.on(Event.Exit, async () => {
     await FS.addFile("/user/desktop/game_best", best.toString()); 
     canvas.remove();
-}
+})
 
 function draw() {
     if (egg_a){
