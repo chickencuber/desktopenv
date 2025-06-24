@@ -454,6 +454,13 @@ function createWindow(shell) {
 
     let full = false;
     let prew;
+    change_size.on(Event.windowResized, () => {
+        if(full) {
+            window.rect.width = vw(100);
+            window.rect.height = vh(100);
+            change();
+        }
+    })
     change_size.on(Event.mousePressed, (mouse) => {
         if(mouse === RIGHT) return;
         if(!full) {
