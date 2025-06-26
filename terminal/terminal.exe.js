@@ -399,7 +399,7 @@ if (v) {
     shell.terminal.add(v + "\n");
 }
 await clear();
-shell.terminal.add("/>");
+shell.terminal.add(shell.localVars.workingDir + ">");
 bbuff = shell.terminal.text().trim();
 
 if (args[0] && !flags.includes("c")) {
