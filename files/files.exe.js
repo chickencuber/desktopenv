@@ -40,7 +40,10 @@ root.on(Event.mousePressed, (button) => {
                 if(name.trim() === "") return;
                 Shell.runApp(`mkdir ${getPath(Shell.localVars.workingDir + "/" + name)}`)
                 cd(".");
-            }
+            },
+            async ["Open in Terminal"]() {
+                Shell.runApp("terminal -c " + Shell.localVars.workingDir);
+            },
         });
     }
 })

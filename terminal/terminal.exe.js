@@ -402,7 +402,7 @@ await clear();
 shell.terminal.add("/>");
 bbuff = shell.terminal.text().trim();
 
-if (args[0]) {
+if (args[0] && !flags.includes("c")) {
     Shell.exit = true;
 }
 
