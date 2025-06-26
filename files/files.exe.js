@@ -42,7 +42,7 @@ root.on(Event.mousePressed, (button) => {
                 cd(".");
             },
             async ["Open in Terminal"]() {
-                Shell.runApp("terminal -c cd " + Shell.localVars.workingDir);
+                Shell.runApp("/bin/desktop/terminal/terminal.exe -c cd " + Shell.localVars.workingDir);
             },
         });
     }
