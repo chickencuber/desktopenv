@@ -464,8 +464,8 @@ class TextInput extends Element{
         canvas.fill(border_color);
         if (border_width !== 0)
             canvas.rect(
-                x,
-                y,
+                x-border_width,
+                y-border_width,
                 width + border_width * 2,
                 height + border_width * 2,
             );
@@ -489,7 +489,7 @@ class TextInput extends Element{
         }
         this.canvas.text(this.text, margin_left, margin_top);
 
-        canvas.image(this.canvas, x+border_width, y+border_width, width, height)
+        canvas.image(this.canvas, x, y, width, height)
     } 
     getWidth(text) {
         if (text === "") return 0;
@@ -563,16 +563,13 @@ class TextInput extends Element{
         if(this.text.length === 0) return 0;
         const mx = Shell.gl.mouse.x;
         const {x} = this.getRect();
-        const {
-            border_width = this.style.border_width ?? 2,
-        } = this.hover ? this.style_hover : this.style
-        if(mx>x+border_width+this.getWidth(this.text)) {
+        if(mx>x+this.getWidth(this.text)) {
             return this.text.length;
         }
         let l = 0;
         let n = 0;
         for(let i = 0; i < this.text.length; i++) {
-            const w = x+border_width+this.getWidth(this.text.slice(0, i));
+            const w = x+this.getWidth(this.text.slice(0, i));
             if(mx>w) {
                 n=i;
                 l = w;
@@ -642,8 +639,8 @@ class ScrollableVert extends Element {
         canvas.fill(border_color);
         if (border_width !== 0)
             canvas.rect(
-                x,
-                y,
+                x-border_width,
+                y-border_width,
                 width + border_width * 2,
                 height + border_width * 2,
             );
@@ -663,7 +660,7 @@ class ScrollableVert extends Element {
         this.canvas.translate(-x, -y);
         this.children.forEach((v) => v._render(this.canvas));
         this.canvas.pop();
-        canvas.image(this.canvas, x+border_width, y+border_width, width, height)
+        canvas.image(this.canvas, x, y, width, height)
     }
     child(...children) {
         super.child(...children);
@@ -721,16 +718,16 @@ class Img extends Element {
         canvas.fill(border_color);
         if (border_width !== 0)
             canvas.rect(
-                x,
-                y,
+                x-border_width,
+                y-border_width,
                 width + border_width * 2,
                 height + border_width * 2,
             );
         if (this.props.image) {
             canvas.image(
                 this.props.image,
-                x + border_width,
-                y + border_width,
+                x,
+                y,
                 width,
                 height,
             );
