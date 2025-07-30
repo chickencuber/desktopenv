@@ -95,7 +95,7 @@ async function viewdesktopentry(app, p, json) {
     h.rect.x = json.x;
     h.rect.y = json.y;
     h.rect.width = 40;
-    h.rect.height = 50;
+    h.rect.height = 42;
     const text = new Div({
         text: app.name.match(/.{1,5}/g).join("\n"),
         style: {
