@@ -97,15 +97,15 @@ async function viewdesktopentry(app, p, json) {
     h.rect.width = 40;
     h.rect.height = 50;
     const text = new Div({
-        text: "T",
+        text: app.name.match(/.{1,5}/g).join("\n"),
         style: {
             border_width: 0,
             color: "black",
             size: 15,
         }
     });
-    text.rect.y = vh(100, h)-text.rect.height + 7;
-    text.text = app.name.match(/.{1,5}/g).join("\n")
+    h.rect.height += text.rect.height;
+    text.rect.y = vh(100, h)-text.rect.height;
     text.rect.absolute = false;
     h.child(text);
     drag(h, () => editMode, () => {
