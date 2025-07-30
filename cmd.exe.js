@@ -22,11 +22,15 @@ const background = new Img({
 })
 background.rect.width = vw(100);
 background.rect.height = vh(100);
-const desktop = new Div({
+const desktop = new Img({
     style: {
         border_width: 0,
     }
 });
+desktop.rect.x = 0;
+desktop.rect.y = 0;
+desktop.rect.width = vw(100);
+desktop.rect.height = vh(100);
 const windows = new Div({
     style: {
         border_width: 0,
@@ -37,6 +41,39 @@ const foreground = new Div({
         border_width: 0,
     }
 });
+
+//ipc go brrr
+class Port {
+    #queue = [];
+    #recv = [];
+    send(item) {
+        if(this.#recv.length > 0) {
+            this.#recv.shift()(item);
+            return;
+        }
+        this.#queue.push(item);
+    }
+    recv() {
+        return new Promise(r => {
+            if(this.#queue.length > 0) {
+                r(this.#queue.shift())
+                return;
+            }
+            this.#recv.push(r);
+        });
+    }
+}
+
+const ports = new Map();
+
+function listenPort(port) {
+    if(ports.has(port)) {
+        return ports.get(port);
+    }
+    const p = new Port();
+    ports.set(port, p);
+    return p;
+}
 
 const Dialog = (function(){
     /**
@@ -290,6 +327,7 @@ function runApp(app) {
     shell.shell.runApp = runApp;
     shell.shell.openContext = openContext;
     shell.shell.Dialog = Dialog;
+    shell.shell.listenPort = listenPort;
     shell.shell._functions = functions;
     shell.shell.run(app).then(() => {
         shells.splice(shells.indexOf(shell), 1);
@@ -335,21 +373,28 @@ function drag(elt, {quit = () => {}, on_drag_start = () => {}, while_drag = () =
             drag = false;
         }
     });
-    root.on(Event.mouseMoved, () => {
+    function moved() {
         if(!drag) return;
         if(!block_x)
             elt.rect.x = Shell.gl.mouse.x - cx;
         if(!block_y) 
             elt.rect.y = Shell.gl.mouse.y - cy;
         while_drag();
-    })
-    root.on(Event.mouseReleased, () => {
+    }
+    root.on(Event.mouseMoved, moved)
+    function released() {
         if(drag) {
             drag = false;
             dragging = false;
             on_drag_end();
         }
-    })
+
+    }
+    root.on(Event.mouseReleased, released);
+    elt.on(Event.removed, () => {
+        root.removeEvent(Event.mouseReleased, released);
+        root.removeEvent(Event.mouseMoved, moved);
+    });
 }
 
 function createWindow(shell) {
@@ -908,6 +953,7 @@ function createApplet(app, ctx) {
         );
     applet.runApp = runApp;
     applet.Dialog = Dialog;
+    applet.listenPort = listenPort;
     applet.openContext = openContext;
     ctx.on(Event.tick, (f = false) => {
         ctx.props.image = applet.gl.canvas;
@@ -984,6 +1030,9 @@ taskbar.rect.x = button.rect.x + button.rect.width + 10;
 createApplet("/bin/desktop/applets/taskbar.exe", taskbar).get_windows = () => {
     return shells.filter(v => v.window !== null);
 };
+
+createApplet("/bin/desktop/applets/desktop.exe", desktop);
+
 bar.child(taskbar);
 let clock = await FS.getFromPath("/user/desktop/24hour") === "0"
 function gettime(view = false) {
@@ -1057,6 +1106,8 @@ root.on(Event.Exit, () => {
 root.on(Event.windowResized, () => {
     background.rect.width = vw(100);
     background.rect.height = vh(100);
+    desktop.rect.width = vw(100);
+    desktop.rect.height = vh(100);
     bar.rect.width = root.rect.width;
     bar.rect.y = vh(100) - bar.props.active;
     menu_elt.rect.y = vh(100) - (bar.rect.height / 2 + 2)- menu_elt.rect.height;

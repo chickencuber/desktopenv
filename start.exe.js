@@ -6,4 +6,5 @@ if(!await FS.exists("/user/desktop/terminal")) await FS.addDir("/user/desktop/te
 if(!await FS.exists("/user/desktop/terminal/.startup.sh")) await FS.copy("/bin/desktop/terminal/.startup.sh", "/user/desktop/terminal/.startup.sh");
 if(!await FS.exists("/user/desktop/files/")) await FS.addDir("/user/desktop/files/");
 if(!await FS.exists("/user/desktop/files/openwith.sh")) await FS.addFile("/user/desktop/files/openwith.sh", "nano $args");
+if(!await FS.exists("/user/desktop/desktop/")) await FS.addDir("/user/desktop/desktop/");
 

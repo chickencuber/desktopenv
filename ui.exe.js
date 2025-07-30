@@ -274,6 +274,7 @@ class Element {
 
 class RootElement extends Element {
     render(canvas = Shell.gl.canvas) {
+        canvas.clear();
         canvas.background(this.style.background ?? "#000000");
     }
     remove() {
@@ -460,6 +461,7 @@ class TextInput extends Element{
             cursor_color = this.style.cursor_color ?? "#000000",
             cursor_width = this.style.cursor_width ?? 2,
         } = collide ? this.style_hover : this.style
+        this.canvas.clear();
         this.canvas.background(background);
         canvas.fill(border_color);
         if (border_width !== 0)
@@ -635,6 +637,7 @@ class ScrollableVert extends Element {
             border_width = this.style.border_width ?? 2,
             border_color = this.style.border_color ?? "#000000"
         } = collide ? this.style_hover : this.style;
+        this.canvas.clear();
         this.canvas.background(background);
         canvas.fill(border_color);
         if (border_width !== 0)
