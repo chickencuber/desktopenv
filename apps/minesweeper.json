@@ -1,0 +1,6 @@
+{
+    "name": "MineSweeper",
+    "icon": "/bin/desktop/icons/minesweeper.png",
+    "terminal": false,
+    "exec": "/bin/desktop/minesweeper.exe"
+}
