@@ -27,7 +27,7 @@ function fixCursor() {
 }
 
 if (args.length > 0) {
-    command = args.join(" ");
+    command = args.map(v => v.toString().split(" ").join("\\ ")).join(" ");
 }
 
 let frame = 0;

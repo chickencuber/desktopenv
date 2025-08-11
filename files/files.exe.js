@@ -30,19 +30,21 @@ root.on(Event.mousePressed, (button) => {
     if(button===RIGHT) {
         Shell.openContext({
             async ["Create File"](){
-                const name = await Shell.Dialog.prompt("name of file");
-                if(name.trim() === "") return;
-                Shell.runApp(`touch ${getPath(Shell.localVars.workingDir + "/" + name)}`);
+                const name = (await Shell.Dialog.prompt("name of file")).trim().split(' ').join("\\ ");
+                if(name === "") return
+                Shell.runApp(`touch ${getPath(Shell.localVars.workingDir.split(" ").join("\\ ") + "/" + name)}`);
                 cd(".");
             },
             async ["Create Folder"](){
-                const name = await Shell.Dialog.prompt("name of folder");
-                if(name.trim() === "") return;
-                Shell.runApp(`mkdir ${getPath(Shell.localVars.workingDir + "/" + name)}`)
+                const name = (await Shell.Dialog.prompt("name of folder")).trim().split(' ').join("\\ ");
+                if(name === "") {
+                    return
+                }
+                Shell.runApp(`mkdir ${getPath(Shell.localVars.workingDir.split(" ").join("\\ ") + "/" + name)}`)
                 cd(".");
             },
             async ["Open in Terminal"]() {
-                Shell.runApp("/bin/desktop/terminal/terminal.exe -c cd " + Shell.localVars.workingDir);
+                Shell.runApp("/bin/desktop/terminal/terminal.exe -c cd " + Shell.localVars.workingDir.split(" ").join("\\ "));
             },
         });
     }
@@ -59,6 +61,7 @@ let y = 0;
 
 
 async function addButton(dir) {
+    try {
     const o = new Button({text: dir});
     o.rect.y = y;
     o.rect.autosize = false;
@@ -77,16 +80,16 @@ async function addButton(dir) {
                 case "file": {
                     if(dir.endsWith(".exe") | dir.endsWith(".sh")) {
                         //run in terminal by default
-                        Shell.runApp("/bin/desktop/terminal/terminal.exe " + dir);
+                        Shell.runApp("/bin/desktop/terminal/terminal.exe " + dir.split(" ").join("\\ "));
                     } else if(
                         [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"].some((v) =>
                             dir.endsWith(v.toLowerCase())
                         )
                     ) {
-                        Shell.runApp("/bin/desktop/image.exe " + dir)
+                        Shell.runApp("/bin/desktop/image.exe " + dir.split(" ").join("\\ "))
                     } else{
                         //open in nano by default
-                        Shell.runApp("/bin/desktop/terminal/terminal.exe /user/desktop/files/openwith.sh " + dir)
+                        Shell.runApp("/bin/desktop/terminal/terminal.exe /user/desktop/files/openwith.sh " + dir.split(" ").join("\\ "))
                     }
                 }
                     break
@@ -100,18 +103,18 @@ async function addButton(dir) {
             let options = {
                 async Rename() {
                     const name = FS.normalizePath(dir)
-                    const n = Shell.Dialog.prompt("rename file");
+                    const n = await Shell.Dialog.prompt("rename file");
                     if(n.trim() === "") {
                         return;
                     }
                     name[name.length - 1] = n;
-                    Shell.runApp(`mv ${dir} ${"/" + name.join("/")}`);
+                    await Shell.runApp(`mv ${dir.split(" ").join("\\ ")} ${("/" + name.join("/")).split(" ").join("\\ ")}`);
                     cd(".");
                 },
                 async Delete() {
                     const t = await Shell.Dialog.confirm("are you sure?");
                     if(t) {
-                        Shell.runApp(`rm ${dir}`);
+                        Shell.runApp(`rm ${dir.split(" ").join("\\ ")}`);
                     }
                     cd(".")
                 }
@@ -119,15 +122,15 @@ async function addButton(dir) {
             switch(type) {
                 case "file": {
                     options["Open With Editor"] = () => {
-                        Shell.runApp("/bin/desktop/terminal/terminal.exe /user/desktop/files/openwith.sh " + dir)
+                        Shell.runApp("/bin/desktop/terminal/terminal.exe /user/desktop/files/openwith.sh " + dir.split(" ").join("\\ "))
                     }
                     if(dir.endsWith(".exe") | dir.endsWith(".sh")) {
                         options = {...options,
                             "Run In Terminal"() {
-                                Shell.runApp("/bin/desktop/terminal/terminal.exe " + dir);                               
+                                Shell.runApp("/bin/desktop/terminal/terminal.exe " + dir.split(" ").join("\\ "));                               
                             },
                             "Run in GUI"() {
-                                Shell.runApp(dir);
+                                Shell.runApp(dir.split(" ").join("\\ "));
                             },
                         }
                     }else if(
@@ -136,7 +139,7 @@ async function addButton(dir) {
                         )
                     ) {
                         option["Open Image"] = function() {
-                            Shell.runApp("/bin/desktop/image.exe " + dir)
+                            Shell.runApp("/bin/desktop/image.exe " + dir.split(" ").join("\\ "))
                         }
                     }
                 }
@@ -153,6 +156,7 @@ async function addButton(dir) {
     })
     y += vh(100, o) + 5;
     scroll.child(o);
+    } catch(e) {}
 }
 
 async function redraw() {
@@ -168,7 +172,7 @@ async function redraw() {
 }
 
 async function cd(dir) {
-    await Shell.run(`cd ${dir}`, Shell, false);
+    await Shell.run(`cd ${dir.split(" ").join("\\ ")}`, Shell, false);
     await redraw();
 }
 

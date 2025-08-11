@@ -99,7 +99,6 @@ const Dialog = (function(){
         text.rect.absolute = false;
         dialog.child(text);
         foreground.child(dialog);
-        const tc = -2;
         const change = 20;
         let width = Math.max(text.rect.width + change, 100);
         let height = 0;
@@ -130,8 +129,8 @@ const Dialog = (function(){
                 const inp = new TextInput();
                 inp.rect.y = text.rect.y + text.rect.height + 5;
                 inp.rect.absolute = false;
-                if(400 + (change-tc) > width) {
-                        width = 400 + (change-tc);
+                if(400 + (change) > width) {
+                        width = 400 + (change);
                 }
                 dialog.child(inp);
                 const ok = new Button()
@@ -175,8 +174,8 @@ const Dialog = (function(){
             v.rect.width = width-change;
             v.rect.x = vw(50, dialog) - vw(50, v);
             if(v instanceof TextInput) {
-                v.rect.width = width-(change-tc);
-                v.rect.x = (vw(50, dialog) - vw(50, v)) + tc;
+                v.rect.width = width-(change);
+                v.rect.x = (vw(50, dialog) - vw(50, v));
                 return;
             }
             v.children[0].rect.x = vw(50, v) - vw(50, v.children[0]);
