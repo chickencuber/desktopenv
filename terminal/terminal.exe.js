@@ -280,7 +280,7 @@ async function Enter() {
     }
 }
 
-function keyPressed(keyCode, key) {
+async function keyPressed(keyCode, key) {
     if (Shell.keyIsDown(CONTROL)) {
         return;
     }
@@ -311,7 +311,7 @@ function keyPressed(keyCode, key) {
             }
             break;
         case ENTER:
-            Enter();
+            await Enter();
             break;
         case BACKSPACE:
             if (cursorX>0) {
