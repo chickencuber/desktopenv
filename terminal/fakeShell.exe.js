@@ -165,8 +165,8 @@ function fakeShell() {
                 cursor.x--;
             },
             add(str) {
-                const {x, y} = shell.terminal.cursor;
-                const cursor = {x, y}
+                const pcursor = shell.terminal.cursor;
+                const cursor = {x: pcursor.x, y: pcursor.y}
                 cursor.x = fixCursorX(shell.terminal.getLine(), cursor.x)
                 const arr = term
                     .text()
@@ -182,10 +182,10 @@ function fakeShell() {
                 arr[cursor.y] = arr[cursor.y].map((v) => (v === undefined ? " " : v));
                 term.text(arr.map((v) => v.join("")).join("\n"));
                 str = str.split(/\x1b[fbarg]\[[0-9A-Fa-f]{6}m/).join("")
-                cursor.x += str.length;
-                cursor.y += (str.match(/\n/g) || []).length;
+                pcursor.x += str.length;
+                pcursor.y += (str.match(/\n/g) || []).length;
                 if (str.split("\n").length>1) {
-                    cursor.x = str.split("\n").at(-1).length;
+                    pcursor.x = str.split("\n").at(-1).length;
                 }
             },
         },
