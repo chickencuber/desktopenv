@@ -167,9 +167,7 @@ function fakeShell() {
             add(str) {
                 const {x, y} = shell.terminal.cursor;
                 const cursor = {x, y}
-                cursor.x = fixCursorX(term
-                    .text()
-                    .split("\n")[cursor.y], cursor.x)
+                cursor.x = fixCursorX(shell.terminal.getLine(), cursor.x)
                 const arr = term
                     .text()
                     .split("\n")
