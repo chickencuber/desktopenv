@@ -1,19 +1,19 @@
-//thank you chatgpt
 function fixCursorX(line, desiredX) {
-  // regex matching your fansi sequences
-  const regex = /\x1b[fbarg]\[[0-9A-Fa-f]{6}m/g;
-  let pos = desiredX;
+    const regex = /\x1b[fbarg]\[[0-9A-Fa-f]{6}m/;
+    let pos = desiredX;
 
-  let match;
-  while ((match = regex.exec(line)) !== null) {
-    // if desiredX lands inside this fansi seq:
-    if (pos > match.index && pos < match.index + match[0].length) {
-      pos = match.index + match[0].length; // jump to after the sequence
-      break; // only one fix needed per set
+    while (true) {
+        const match = line.match(regex);
+        if(match === null) break;
+        if(pos>match.index&&pos<match.index+match[0].length) {
+            pos = match.index + match[0].length; 
+            line = line.replace(regex, "");
+        } else {
+            break;
+        }
     }
-  }
 
-  return pos;
+    return pos;
 }
 
 function fakeShell() {
