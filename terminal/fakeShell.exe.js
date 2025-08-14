@@ -5,7 +5,7 @@ function fixCursorX(line, desiredX) {
     while (true) {
         const match = line.match(regex);
         if(match === null) break;
-        if(pos>=match.index&&pos<match.index+match[0].length) {
+        if(pos>match.index&&pos<match.index+match[0].length) {
             pos = match.index + match[0].length; 
             line = line.replace(regex, "");
         } else {
