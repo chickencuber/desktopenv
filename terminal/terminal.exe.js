@@ -365,7 +365,7 @@ function clear() {
             if (shell.gl.canvas !== false) {
                 shell.gl.canvas.remove();
             }
-            shell.scroll = false;
+            shell.terminal.scroll.allow = false;
             shell.gl.canvas = false;
             shell.exit = false;
             shell.mouseClicked = () => {};
