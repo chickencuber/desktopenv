@@ -1,0 +1,6 @@
+{
+    "name": "Widget Manager",
+    "icon": "/bin/desktop/icons/widget_manager.png",
+    "terminal": false,
+    "exec": "/bin/desktop/widget_manager.exe"
+}

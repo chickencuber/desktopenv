@@ -133,6 +133,39 @@ async function viewdesktopentry(app, p, json) {
 
 let editMode = false;
 
+async function viewwidget(app, p, json) {
+    const h = new Img({
+        style: {
+            border_width: 0,
+        },
+    });
+    h.rect.x = json.x;
+    h.rect.y = json.y;
+    h.rect.width = app.width;
+    h.rect.height = app.height;
+    Shell.createApplet(app.path, h);
+    drag(h, () => editMode, () => {
+        json.x = h.rect.x;
+        json.y = h.rect.y;
+        FS.addFile(p, JSON.stringify(json, null, 2))
+    });
+    h.on(Event.mousePressed, (v) => {
+        if(editMode) return;
+        if(v==RIGHT) {
+            Shell.openContext({
+                async ["Remove From Desktop"](){
+                    await FS.delete(p);
+                    count = 0;
+                    update();
+                }
+            })
+            return;
+        }
+    })
+
+    root.child(h);
+}
+
 async function update() {
     if(editMode) return;
     [...root.children].forEach(v => v.remove());
@@ -141,8 +174,11 @@ async function update() {
         const app = _app.json;
         switch(app.type) {
             case "desktopentry":
-                await viewdesktopentry(JSON.parse(await FS.getFromPath(app.path)), _app.path, app);                
+                await viewdesktopentry(JSON.parse(await FS.getFromPath(app.path)), _app.path, app);
                 break;
+            case "widget":
+                await viewwidget(JSON.parse(await FS.getFromPath(app.path)), _app.path, app);
+                break; 
         }
     }
 }

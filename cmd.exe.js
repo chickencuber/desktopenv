@@ -990,6 +990,9 @@ function createApplet(app, ctx) {
     ctx.on(Event.mouseWheel, (...args) => {
         applet.mouseWheel(...args);
     });
+    ctx.on(Event.removed, () => {
+        applet.exit = true; 
+    })
 
     applet.run(app).then(() => {
         if(applet.gl.canvas) {
@@ -1030,7 +1033,9 @@ createApplet("/bin/desktop/applets/taskbar.exe", taskbar).get_windows = () => {
     return shells.filter(v => v.window !== null);
 };
 
-createApplet("/bin/desktop/applets/desktop.exe", desktop);
+createApplet("/bin/desktop/applets/desktop.exe", desktop).createApplet = (...args) => {
+    return createApplet(...args)
+};
 
 bar.child(taskbar);
 let clock = await FS.getFromPath("/user/desktop/24hour") === "0"
