@@ -1,0 +1,6 @@
+{
+    "name": "Klondike",
+    "icon": "/bin/desktop/icons/klondike.png",
+    "terminal": false,
+    "exec": "/bin/desktop/klondike.exe"
+}

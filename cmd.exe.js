@@ -520,12 +520,14 @@ function createWindow(shell) {
             window.rect.height = vh(100);
             change();
             full = true;
+            window.style.border_radius = 0;
             change_size.text = "\u{1F5D7}"
         } else {
             window.rect.x = prew.x;
             window.rect.y = prew.y;
             window.rect.width = prew.width;
             window.rect.height = prew.height;
+            window.style.border_radius = 10;
             change();
             full = false;
             change_size.text = "\u{1F5D6}";

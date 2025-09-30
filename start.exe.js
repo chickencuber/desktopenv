@@ -27,6 +27,7 @@ await f.dir("apps", async (fd) => {
     await fd.copy(...d("minesweeper.json"))
     await fd.copy(...d("terminal.json"))
     await fd.copy(...d("widget_manager.json"))
+    await fd.copy(...d("klondike.json"))
 })
 
 await f.file("24hour", "0");
