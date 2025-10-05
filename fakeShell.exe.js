@@ -39,6 +39,7 @@ function fakeShell(x, y, width, height) {
             return Shell.deltaTime;
         },
         gl: {
+            allow_resize: true,
             canvas: false,
             ready: false,
             createGraphics: (...args) => {

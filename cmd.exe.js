@@ -320,6 +320,7 @@ function runApp(app) {
             () => functions.w(),
             () => functions.h(),
         ),
+        functions,
         app,
         window: null,
     }
@@ -327,7 +328,10 @@ function runApp(app) {
     shell.shell.openContext = openContext;
     shell.shell.Dialog = Dialog;
     shell.shell.listenPort = listenPort;
-    shell.shell._functions = functions;
+    shell.shell.gl.resizeWindow = (w, h) => {
+        functions.w = () => w;
+        functions.h = () => h;
+    };
     shell.shell.run(app).then(() => {
         shells.splice(shells.indexOf(shell), 1);
         if(shell.shell.gl.ready) {
@@ -406,6 +410,11 @@ function createWindow(shell) {
             border_width: 1,
         }
     });
+    shell.shell.gl.resizeWindow = (width, height) => {
+        window.rect.width = width;
+        window.rect.height = height;
+        change();
+    }
     let show = true;
     const old = window.move.bind(window);
     window.move = function(...args) {
@@ -655,7 +664,7 @@ function createWindow(shell) {
     let hx = false;
     handle_x.on(Event.tick, () => {
         if(dragging) return;
-        if(full) {
+        if(full || !shell.shell.gl.allow_resize) {
             Shell.gl.cursor = "default";
             hx = false;
             return;
@@ -672,7 +681,7 @@ function createWindow(shell) {
         block_y: true,
         allow: [name],
         on_drag_start() {
-            return full;
+            return full || !shell.shell.gl.allow_resize;
         },
         while_drag() {
             window.rect.width = (handle_x.getRect().x + 5) - window.rect.x;
@@ -698,7 +707,7 @@ function createWindow(shell) {
     let hy = false;
     handle_y.on(Event.tick, () => {
         if(dragging) return;
-        if(full) {
+        if(full || !shell.shell.gl.allow_resize) {
             Shell.gl.cursor = "default";
             hy = false;
             return;
@@ -715,7 +724,7 @@ function createWindow(shell) {
         block_x: true,
         allow: [name],
         on_drag_start() {
-            return full;
+            return full || !shell.shell.gl.allow_resize;
         },
         while_drag() {
             window.rect.height = (handle_y.getRect().y + 5) - window.rect.y;
@@ -742,7 +751,7 @@ function createWindow(shell) {
         img.style.border_width = img.focused? 1: 0;
         window.style.border_width = window.hover? 2: 1;
         if(dragging) return;
-        if(full) {
+        if(full || !shell.shell.gl.allow_resize) {
             Shell.gl.cursor = "default";
             hc = false;
             return;
@@ -758,7 +767,7 @@ function createWindow(shell) {
     drag(handle_c, {
         allow: [name],
         on_drag_start() {
-            return full
+            return full||!shell.shell.gl.allow_resize
         },
         while_drag() {
             window.rect.height = (handle_c.getRect().y + 5) - window.rect.y;
@@ -776,10 +785,10 @@ function createWindow(shell) {
         }
     })
 
-    shell.shell._functions.x = () => Shell.gl.mouse.x - img.getRect().x;
-    shell.shell._functions.y = () => Shell.gl.mouse.y - img.getRect().y;
-    shell.shell._functions.w = () => img.getRect().width;
-    shell.shell._functions.h = () => img.getRect().height;
+    shell.functions.x = () => Shell.gl.mouse.x - img.getRect().x;
+    shell.functions.y = () => Shell.gl.mouse.y - img.getRect().y;
+    shell.functions.w = () => img.getRect().width;
+    shell.functions.h = () => img.getRect().height;
 
     function change() {
         handle_y.rect.width = window.rect.width - 5;

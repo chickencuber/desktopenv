@@ -1,6 +1,10 @@
 const { Event, Div, root, vw, vh, ScrollableVert, Button } = await use(
     "~/ui.exe"
 );
+
+Shell.name = "Klondike";
+Shell.icon = loadImage(await getFile("~/icons/klondike.png"))
+
 function start() {
     if(!Shell.in_desktop) return "must be launched in a desktop enviroment";
 
@@ -303,7 +307,9 @@ function start() {
 
     const button = new Button({text: "reset"});
     button.rect.x = x+4;
-    button.on(Event.mousePressed, () => restart())
+    button.on(Event.mousePressed, () => {
+        restart()
+    })
     root.child(bc, button)
 }
 
