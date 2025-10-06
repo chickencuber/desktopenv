@@ -12,6 +12,15 @@ const {
 
 const _default = loadImage(await getFile("~/icons/default.png"))
 
+/**
+    * @typedef Settings
+    * @property {boolean} show_content_while_dragging
+    */
+
+/**
+    * @type {Settings}
+    */
+const settings = JSON.parse(await getFile("/user/desktop/settings.json"));
 const background = new Img({
     props: {
         image: loadImage(await getFile("/user/desktop/wallpaper.png"))
@@ -345,10 +354,11 @@ function runApp(app) {
 
 let dragging = false;
 
-function drag(elt, {quit = () => {}, on_drag_start = () => {}, while_drag = () => {}, on_drag_end = () => {}, allow=[], block_x = false, block_y = false, no_children = false} = {}) {
+function drag(elt, {link = ()=>{}, quit = () => {}, on_drag_start = () => {}, while_drag = () => {}, on_drag_end = () => {}, allow=[], block_x = false, block_y = false, no_children = false} = {}) {
     let drag = false;
     let cx = 0;
     let cy = 0;
+    let d;
     quit(() => {
         if(drag) {
             drag = false;
@@ -369,6 +379,9 @@ function drag(elt, {quit = () => {}, on_drag_start = () => {}, while_drag = () =
         }
         drag = true;
         dragging = true;
+        d = link() || elt;
+        d.rect.x = elt.rect.x;
+        d.rect.y = elt.rect.y;
         cx = Shell.gl.mouse.x - elt.rect.x;
         cy = Shell.gl.mouse.y - elt.rect.y;
         if(on_drag_start()) {
@@ -379,9 +392,9 @@ function drag(elt, {quit = () => {}, on_drag_start = () => {}, while_drag = () =
     function moved() {
         if(!drag) return;
         if(!block_x)
-            elt.rect.x = Shell.gl.mouse.x - cx;
+            d.rect.x = Shell.gl.mouse.x - cx;
         if(!block_y) 
-            elt.rect.y = Shell.gl.mouse.y - cy;
+            d.rect.y = Shell.gl.mouse.y - cy;
         while_drag();
     }
     root.on(Event.mouseMoved, moved)
@@ -389,6 +402,8 @@ function drag(elt, {quit = () => {}, on_drag_start = () => {}, while_drag = () =
         if(drag) {
             drag = false;
             dragging = false;
+            elt.rect.x = d.rect.x;
+            elt.rect.y = d.rect.y;
             on_drag_end();
         }
 
@@ -408,6 +423,14 @@ function createWindow(shell) {
             border_color: "#ffffff",
             border_radius: 10,
             border_width: 1,
+        }
+    });
+    const border = new Div({
+        style: {
+            background: "#00000000",
+            border_color: "#666666",
+            border_radius: 10,
+            border_width: 2,
         }
     });
     shell.shell.gl.resizeWindow = (width, height) => {
@@ -431,9 +454,10 @@ function createWindow(shell) {
         window.remove();
     }
     shell.window = window;
-    const s = 400;
-    window.rect.width = s + 10;
-    window.rect.height = s + 25;
+    window.rect.width = shell.functions.w() + 10;
+    window.rect.height = shell.functions.h() + 25;
+    border.rect.width = window.rect.width;
+    border.rect.height = window.rect.height;
     const close = new Button({
         text: "\u{1F5D9}", 
         style: {
@@ -577,18 +601,29 @@ function createWindow(shell) {
     name.rect.x = close.rect.width + 7;
 
     drag(window, {
+        link: () => settings.show_content_while_dragging? false: border,
         quit(fn) {
             quitDrag = fn;
         },
         no_children: true,
-        allow: [name, icon],
+        allow: [name, icon, border],
         on_drag_start() {
             if(full) {
                 return true;
             }
             Shell.gl.cursor= "grabbing";
+            if(!settings.show_content_while_dragging) {
+                border.rect.width = window.rect.width;
+                border.rect.height = window.rect.height;
+                border.rect.x = window.rect.x;
+                border.rect.y = window.rect.y;
+                window.child(border);
+            }
         },
         on_drag_end() {
+            if(!settings.show_content_while_dragging) {
+                border.remove();
+            }
             Shell.gl.cursor = "default";
         },
     })
@@ -679,18 +714,40 @@ function createWindow(shell) {
     });
     drag(handle_x, {
         block_y: true,
-        allow: [name],
+        allow: [name, border],
         on_drag_start() {
-            return full || !shell.shell.gl.allow_resize;
+            if(full || !shell.shell.gl.allow_resize) return true;
+            if(!settings.show_content_while_dragging) {
+                border.rect.width = window.rect.width;
+                border.rect.height = window.rect.height;
+                border.rect.x = window.rect.x;
+                border.rect.y = window.rect.y;
+                window.child(border)
+            }
         },
         while_drag() {
-            window.rect.width = (handle_x.getRect().x + 5) - window.rect.x;
-            if(window.rect.width < 200) {
-                window.rect.width = 200;
-                handle_x.rect.x = window.rect.width - 5;
+            if(settings.show_content_while_dragging) {
+                window.rect.width = (handle_x.getRect().x + 5) - window.rect.x;
+                if(window.rect.width < 200) {
+                    window.rect.width = 200;
+                    handle_x.rect.x = window.rect.width - 5;
+                }
+                change()
+            } else {
+                border.rect.width = (handle_x.getRect().x + 5) - border.rect.x;
+                if(border.rect.width < 200) {
+                    border.rect.width = 200;
+                    handle_x.rect.x = border.rect.width - 5;
+                }
             }
-            change()
-        }
+        },
+        on_drag_end(){
+            if(!settings.show_content_while_dragging) {
+                border.remove();
+                window.rect.width = border.rect.width;
+                change();
+            }
+        },
     })
 
 
@@ -722,17 +779,40 @@ function createWindow(shell) {
     });
     drag(handle_y, {
         block_x: true,
-        allow: [name],
+        allow: [name, border],
         on_drag_start() {
-            return full || !shell.shell.gl.allow_resize;
+            if(full || !shell.shell.gl.allow_resize) return true;
+            if(!settings.show_content_while_dragging) {
+                border.rect.width = window.rect.width;
+                border.rect.height = window.rect.height;
+                border.rect.x = window.rect.x;
+                border.rect.y = window.rect.y;
+                window.child(border);
+            }
         },
         while_drag() {
-            window.rect.height = (handle_y.getRect().y + 5) - window.rect.y;
-            if(window.rect.height < 200) {
-                window.rect.height = 200;
-                handle_y.rect.y = window.rect.height - 5;
+            if(settings.show_content_while_dragging) {
+                window.rect.height = (handle_y.getRect().y + 5) - window.rect.y;
+                if(window.rect.height < 200) {
+                    window.rect.height = 200;
+                    handle_y.rect.y = window.rect.height - 5;
+                }
+                change()
+            } else {
+                border.rect.height = (handle_y.getRect().y + 5) - border.rect.y;
+                if(border.rect.height < 200) {
+                    border.rect.height = 200;
+                    handle_y.rect.y = border.rect.height - 5;
+                }
             }
-            change()
+        },
+        on_drag_end() {
+            if(!settings.show_content_while_dragging) {
+                border.remove();
+                window.rect.height = border.rect.height;
+                change();
+            }
+            border.style.border_width = 0; 
         }
     })
 
@@ -765,23 +845,53 @@ function createWindow(shell) {
         }
     });
     drag(handle_c, {
-        allow: [name],
+        allow: [name, border],
         on_drag_start() {
-            return full||!shell.shell.gl.allow_resize
+            if(full || !shell.shell.gl.allow_resize) return true;
+            if(!settings.show_content_while_dragging) {
+                border.rect.width = window.rect.width;
+                border.rect.height = window.rect.height;
+                border.rect.x = window.rect.x;
+                border.rect.y = window.rect.y;
+                window.child(border)
+            }
         },
         while_drag() {
-            window.rect.height = (handle_c.getRect().y + 5) - window.rect.y;
-            if(window.rect.height < 200) {
-                window.rect.height = 200;
-                handle_c.rect.y = window.rect.height - 5;
-            }
+            if(settings.show_content_while_dragging) {
+                window.rect.height = (handle_c.getRect().y + 5) - window.rect.y;
+                if(window.rect.height < 200) {
+                    window.rect.height = 200;
+                    handle_c.rect.y = window.rect.height - 5;
+                }
 
-            window.rect.width = (handle_c.getRect().x + 5) - window.rect.x;
-            if(window.rect.width < 200) {
-                window.rect.width = 200;
-                handle_c.rect.x = window.rect.width - 5;
+                window.rect.width = (handle_c.getRect().x + 5) - window.rect.x;
+                if(window.rect.width < 200) {
+                    window.rect.width = 200;
+                    handle_c.rect.x = window.rect.width - 5;
+                }
+                change();
+            } else {
+                border.rect.height = (handle_c.getRect().y + 5) - border.rect.y;
+                if(border.rect.height < 200) {
+                    border.rect.height = 200;
+                    handle_c.rect.y = border.rect.height - 5;
+                }
+
+                border.rect.width = (handle_c.getRect().x + 5) - border.rect.x;
+                if(border.rect.width < 200) {
+                    border.rect.width = 200;
+                    handle_c.rect.x = border.rect.width - 5;
+                }
             }
-            change();
+        },
+        on_drag_end() {
+            if(!settings.show_content_while_dragging) {
+                border.remove();
+                window.rect.height = border.rect.height;
+                window.rect.width = border.rect.width;
+                change();
+            }
+            border.style.border_width = 0; 
         }
     })
 

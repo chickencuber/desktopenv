@@ -41,4 +41,7 @@ await f.dir("desktop")
 await f.dir("widgets", async (f) => {
     await f.copy("/bin/desktop/widgets/test.json", "test.json")
 })
+await f.file("settings.json", JSON.stringify({
+    show_content_while_dragging: true,
+}, null, 2))
 
